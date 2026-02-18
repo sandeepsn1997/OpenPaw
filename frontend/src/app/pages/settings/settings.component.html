@@ -1,0 +1,134 @@
+<div class="page-container">
+  <div class="page-header">
+    <h1>Settings</h1>
+    <p>Configure your OpenPaw instance</p>
+  </div>
+
+  @if (saved()) {
+  <div class="save-toast">
+    <span class="material-symbols-rounded" style="font-size: 18px;">check_circle</span>
+    Settings saved successfully
+  </div>
+  }
+
+  <div class="settings-sections">
+    <!-- API Configuration -->
+    <div class="card settings-section">
+      <h2 class="section-title">
+        <span class="material-symbols-rounded">key</span>
+        API Configuration
+      </h2>
+      <div class="form-group">
+        <label>Groq API Key</label>
+        <div class="api-key-row">
+          <input class="input" [type]="apiKeyMasked() ? 'password' : 'text'" [(ngModel)]="apiKey" placeholder="gsk_..."
+            style="flex: 1;" />
+          <button class="btn btn-secondary" (click)="toggleApiKeyVisibility()">
+            <span class="material-symbols-rounded" style="font-size: 18px;">
+              {{ apiKeyMasked() ? 'visibility' : 'visibility_off' }}
+            </span>
+          </button>
+        </div>
+        <small class="form-hint">Get your API key from <a href="https://console.groq.com"
+            target="_blank">console.groq.com</a></small>
+      </div>
+    </div>
+
+    <!-- Model Configuration -->
+    <div class="card settings-section">
+      <h2 class="section-title">
+        <span class="material-symbols-rounded">psychology</span>
+        Model Configuration
+      </h2>
+      <div class="form-group">
+        <label>Default Model</label>
+        <select class="input" [(ngModel)]="model">
+          @for (m of models; track m.value) {
+          <option [value]="m.value">{{ m.label }}</option>
+          }
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Temperature</label>
+          <div class="slider-row">
+            <input type="range" [(ngModel)]="temperature" min="0" max="2" step="0.1" class="slider" />
+            <span class="slider-val">{{ temperature() }}</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Max Tokens</label>
+          <input class="input" type="number" [(ngModel)]="maxTokens" min="1" max="32768" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Appearance -->
+    <div class="card settings-section">
+      <h2 class="section-title">
+        <span class="material-symbols-rounded">palette</span>
+        Appearance
+      </h2>
+      <div class="form-group">
+        <label>Theme</label>
+        <div class="theme-toggle">
+          <button class="theme-btn" [class.active]="theme() === 'dark'" (click)="theme.set('dark')">
+            <span class="material-symbols-rounded" style="font-size: 18px;">dark_mode</span> Dark
+          </button>
+          <button class="theme-btn" [class.active]="theme() === 'light'" (click)="theme.set('light')">
+            <span class="material-symbols-rounded" style="font-size: 18px;">light_mode</span> Light
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- System Info -->
+    <div class="card settings-section">
+      <h2 class="section-title">
+        <span class="material-symbols-rounded">info</span>
+        System Info
+      </h2>
+      <div class="info-grid">
+        <div class="info-item"><span class="info-label">Version</span><span class="info-value">0.1.0</span></div>
+        <div class="info-item"><span class="info-label">Backend</span><span class="info-value">FastAPI + Uvicorn</span>
+        </div>
+        <div class="info-item"><span class="info-label">Frontend</span><span class="info-value">Angular 17</span></div>
+        <div class="info-item"><span class="info-label">Database</span><span class="info-value">SQLite</span></div>
+        <div class="info-item"><span class="info-label">LLM Provider</span><span class="info-value">Groq Cloud</span>
+        </div>
+        <div class="info-item"><span class="info-label">Vector Store</span><span class="info-value">FAISS</span></div>
+      </div>
+    </div>
+
+    <!-- Danger Zone -->
+    <div class="card settings-section danger-section">
+      <h2 class="section-title danger-title">
+        <span class="material-symbols-rounded">warning</span>
+        Danger Zone
+      </h2>
+      <div class="danger-actions">
+        <div class="danger-row">
+          <div>
+            <strong>Clear Conversation History</strong>
+            <p>Delete all conversations from the database</p>
+          </div>
+          <button class="btn btn-danger">Clear History</button>
+        </div>
+        <div class="danger-row">
+          <div>
+            <strong>Reset Knowledge Base</strong>
+            <p>Remove all indexed documents and vectors</p>
+          </div>
+          <button class="btn btn-danger">Reset KB</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-footer">
+    <button class="btn btn-primary" (click)="saveSettings()">
+      <span class="material-symbols-rounded" style="font-size: 18px;">save</span>
+      Save Settings
+    </button>
+  </div>
+</div>
