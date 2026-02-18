@@ -5,15 +5,16 @@ import re
 
 from .config import settings
 from .services import TaskService
+from .skills import skill_manager
 
 
 class SimpleAgent:
-    """Minimal agent for processing user messages.
+    """Agent for processing user messages with tool support.
     
-    Supports basic commands and LLM-powered task creation.
+    Uses SkillManager to discover and execute capabilities.
     """
 
-    def run(
+    async def run(
         self, 
         user_message: str, 
         db=None,
@@ -22,72 +23,24 @@ class SimpleAgent:
     ) -> Tuple[str, Optional[str]]:
         """
         Process user message and return response.
-        
-        Args:
-            user_message: User input message
-            db: Optional database session
-            history: Optional list of past messages in the conversation
-            system_prompt: Optional custom system prompt
-            
-        Returns:
-            Tuple of (response_text, tool_used_name)
         """
         normalized = user_message.lower().strip()
 
-        # Demo: Show current time
+        # Hardcoded demo commands (pre-skill era) - still keeping them for fast response
         if "time" in normalized or "date" in normalized:
             now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
             return f"Current time: {now}", "time"
 
-        # Demo: Echo command
         if normalized.startswith("echo "):
             return user_message[5:], "echo"
-
-        # Check for task creation intent
-        task_keywords = ["add task", "create task", "new task", "todo", "remind me to", "i need to", "task:"]
-        is_task_intent = any(kw in normalized for kw in task_keywords) or normalized.startswith("task ")
 
         from .core.llm import GroqLLM
         llm = GroqLLM(
             api_key=settings.groq_api_key,
             model=settings.llm_model,
-            temperature=0.1 if is_task_intent else settings.llm_temperature,
-            max_tokens=settings.llm_max_tokens,
         )
 
-        if is_task_intent and db:
-            # specialized prompt to extract task details
-            extract_prompt = (
-                f"The user wants to create a task: \"{user_message}\"\n\n"
-                "Extract the following details in JSON format:\n"
-                "- title: short summary of the task\n"
-                "- description: any additional details\n"
-                "- task_type: 'one_time', 'daily', or 'monthly'\n"
-                "- scheduled_time: HH:MM format if mentioned, else null\n"
-                "- scheduled_date: YYYY-MM-DD format if mentioned, else null\n"
-                "- recurrence: 'one_time', 'daily', or 'monthly'\n\n"
-                "Respond ONLY with the JSON object."
-            )
-            
-            try:
-                task_data = llm.generate_structured(extract_prompt)
-                if task_data and "title" in task_data:
-                    task_service = TaskService(db)
-                    task = task_service.create_task(
-                        title=task_data.get("title"),
-                        description=task_data.get("description"),
-                        task_type=task_data.get("task_type", "one_time"),
-                        scheduled_time=task_data.get("scheduled_time"),
-                        scheduled_date=task_data.get("scheduled_date"),
-                        recurrence=task_data.get("recurrence", "one_time")
-                    )
-                    return f"✅ Task added: **{task.title}**", "task_creation"
-            except Exception as e:
-                # Fallback to normal chat if extraction fails
-                print(f"Task extraction failed: {e}")
-
-        # Default: Route to Groq LLM
-        # Build messages list starting with system prompt
+        # Build messages list
         messages = []
         sys_p = system_prompt or "You are a helpful AI assistant."
         messages.append({"role": "system", "content": sys_p})
@@ -96,6 +49,39 @@ class SimpleAgent:
             messages.extend(history)
             
         messages.append({"role": "user", "content": user_message})
+
+        # Get available tools from SkillManager
+        tools = skill_manager.get_tool_definitions()
         
-        reply = llm.chat(messages)
-        return reply, "groq"
+        # Initial LLM call with tools
+        response_message = llm.chat_with_tools(messages, tools)
+        
+        # Check if the model wants to call a tool
+        if response_message.tool_calls:
+            messages.append(response_message)  # Add assistant's tool call to history
+            
+            tool_used_names = []
+            for tool_call in response_message.tool_calls:
+                function_name = tool_call.function.name
+                function_args = json.loads(tool_call.function.arguments)
+                
+                print(f"Agent calling tool: {function_name} with {function_args}")
+                
+                # Execute the skill
+                tool_result = await skill_manager.execute_skill(function_name, function_args)
+                tool_used_names.append(function_name)
+                
+                # Add tool result to messages
+                messages.append({
+                    "tool_call_id": tool_call.id,
+                    "role": "tool",
+                    "name": function_name,
+                    "content": tool_result,
+                })
+            
+            # Second LLM call to generate final response based on tool results
+            final_reply = llm.chat(messages)
+            return final_reply, ", ".join(tool_used_names)
+
+        # No tool called, return normal reply
+        return response_message.content, "groq"

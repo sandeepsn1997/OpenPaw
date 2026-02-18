@@ -44,6 +44,15 @@ app = FastAPI(
 # Initialize database
 init_db()
 
+# Sync skills with database
+from .skills import skill_manager
+from .db import SessionLocal
+db = SessionLocal()
+try:
+    skill_manager.sync_with_db(db)
+finally:
+    db.close()
+
 # Initialize agent
 agent = SimpleAgent()
 

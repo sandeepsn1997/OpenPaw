@@ -1,0 +1,24 @@
+{
+  "name": "get_weather",
+  "description": "Get current weather for a specific location",
+  "version": "1.0.0",
+  "input_schema": {
+    "properties": {
+      "location": {
+        "type": "string",
+        "description": "City and state/country, e.g. 'San Francisco, CA' or 'London, UK'"
+      },
+      "unit": {
+        "type": "string",
+        "enum": [
+          "celsius",
+          "fahrenheit"
+        ],
+        "default": "celsius"
+      }
+    },
+    "required": [
+      "location"
+    ]
+  }
+}

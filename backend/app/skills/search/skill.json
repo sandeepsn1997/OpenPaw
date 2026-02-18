@@ -1,0 +1,21 @@
+{
+  "name": "web_search",
+  "description": "Search the web for real-time information, news, and facts",
+  "version": "1.0.0",
+  "input_schema": {
+    "properties": {
+      "query": {
+        "type": "string",
+        "description": "The search query to look up"
+      },
+      "max_results": {
+        "type": "integer",
+        "description": "Maximum number of results to return",
+        "default": 3
+      }
+    },
+    "required": [
+      "query"
+    ]
+  }
+}

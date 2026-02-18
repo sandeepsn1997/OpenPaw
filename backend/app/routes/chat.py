@@ -44,7 +44,7 @@ def list_conversations(
 
 
 @router.post("", response_model=ChatResponse)
-def chat(
+async def chat(
     request: ChatRequest,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
@@ -116,8 +116,8 @@ def chat(
             f"{persistent_context}\n\n"
             f"{extra_context}"
         )
-
-        reply, tool_used = simple_agent.run(
+ 
+        reply, tool_used = await simple_agent.run(
             request.message,
             db=db,
             history=history,

@@ -154,6 +154,29 @@ class GroqLLM:
         except Exception as e:
             raise RuntimeError(f"Groq API error: {str(e)}")
 
+    def chat_with_tools(
+        self, 
+        messages: List[dict], 
+        tools: List[dict],
+        tool_choice: str = "auto",
+        temperature: Optional[float] = None
+    ) -> Any:
+        """
+        Chat with tool support.
+        """
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                tools=tools,
+                tool_choice=tool_choice,
+                temperature=temperature or self.temperature,
+                max_tokens=self.max_tokens,
+            )
+            return response.choices[0].message
+        except Exception as e:
+            raise RuntimeError(f"Groq API error (tools): {str(e)}")
+
     def set_model(self, model: str) -> None:
         """Set model name. Available models: mixtral, llama2, gemma."""
         if model in self.MODELS:
