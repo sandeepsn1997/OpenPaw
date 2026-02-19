@@ -1,0 +1,13 @@
+name: internet_search
+description: >-
+  Perform structured web research, compare multiple sources, and return concise
+  findings with citations. Supports freshness filters and domain-level
+  constraints for trustworthy internet lookups.
+version: 1.0.0
+triggers:
+  - search internet
+  - web search
+  - find online sources
+  - compare sources
+  - latest information online
+cron_capable: false

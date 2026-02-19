@@ -1,0 +1,63 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "stock_analysis_input",
+  "type": "object",
+  "properties": {
+    "tickers": {
+      "type": "array",
+      "description": "Ticker symbols to analyze, e.g. AAPL, MSFT, NVDA.",
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Za-z.\\-]{1,10}$"
+      },
+      "minItems": 1,
+      "maxItems": 20
+    },
+    "benchmark": {
+      "type": "string",
+      "description": "Optional benchmark index ticker, e.g. SPY, QQQ.",
+      "default": "SPY"
+    },
+    "analysis_window": {
+      "type": "string",
+      "description": "Primary analysis horizon.",
+      "enum": ["1d", "1w", "1m", "3m", "6m", "ytd", "1y", "3y", "5y"],
+      "default": "1m"
+    },
+    "include_fundamentals": {
+      "type": "boolean",
+      "description": "Include valuation and earnings quality metrics.",
+      "default": true
+    },
+    "include_technicals": {
+      "type": "boolean",
+      "description": "Include indicators such as RSI, MACD, moving averages.",
+      "default": true
+    },
+    "include_news_catalysts": {
+      "type": "boolean",
+      "description": "Include recent market-moving news and events.",
+      "default": true
+    },
+    "risk_profile": {
+      "type": "string",
+      "description": "Tailor commentary to user risk appetite.",
+      "enum": ["conservative", "balanced", "aggressive"],
+      "default": "balanced"
+    },
+    "comparison_mode": {
+      "type": "string",
+      "description": "Comparison objective for multiple tickers.",
+      "enum": ["performance", "valuation", "volatility", "momentum"],
+      "default": "performance"
+    },
+    "output_format": {
+      "type": "string",
+      "description": "Preferred output structure.",
+      "enum": ["summary", "detailed_report", "table"],
+      "default": "summary"
+    }
+  },
+  "required": ["tickers"],
+  "additionalProperties": false
+}
