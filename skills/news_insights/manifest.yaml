@@ -1,0 +1,13 @@
+name: news_insights
+description: >-
+  Track and summarize latest news by topic, geography, and publication window
+  (day/week/month/year). Produces category-aware digests, trend highlights, and
+  source-diversified updates.
+version: 1.0.0
+triggers:
+  - latest news
+  - news by category
+  - this month news
+  - this year news
+  - news trends
+cron_capable: true
