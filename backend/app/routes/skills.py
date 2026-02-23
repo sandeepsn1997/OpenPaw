@@ -13,6 +13,7 @@ router = APIRouter()
 
 
 @router.get("/", response_model=List[Skill])
+@router.get("", response_model=List[Skill])
 def list_skills(db: Session = Depends(get_db)):
     """List all registered skills."""
     from ..database import SkillDB
@@ -35,18 +36,49 @@ def list_skills(db: Session = Depends(get_db)):
     return skills
 
 
-@router.post("/", response_model=Skill)
+@router.post("/register", response_model=Skill)
 def register_skill(manifest: SkillManifest, db: Session = Depends(get_db)):
     """Register a new skill."""
     service = SkillService(db)
     return service.register_skill(manifest)
 
 
+@router.get("/{skill_id}", response_model=Skill)
+def get_skill(skill_id: str, db: Session = Depends(get_db)):
+    """Get single skill by ID."""
+    service = SkillService(db)
+    skill = service.get_skill(skill_id)
+    if not skill:
+        raise HTTPException(status_code=404, detail="Skill not found")
+    return skill
+
+@router.delete("/{skill_id}", response_model=Dict[str, Any])
+def delete_skill(skill_id: str, db: Session = Depends(get_db)):
+    """Delete skill by ID."""
+    service = SkillService(db)
+    if not service.delete_skill(skill_id):
+        raise HTTPException(status_code=404, detail="Skill not found")
+    return {"message": "Skill deleted successfully"}
+
+
 @router.get("/{skill_id}/settings", response_model=Dict[str, Any])
 def get_skill_settings(skill_id: str):
     """Load optional per-skill UI settings config."""
-    settings_path = Path("skills") / skill_id / "settings.json"
-    if not settings_path.exists():
-        raise HTTPException(status_code=404, detail="settings.json not found for skill")
-    with open(settings_path, "r", encoding="utf-8") as fh:
-        return json.load(fh)
+    # Look in the internal backend/app/skills directory
+    skill_dir = Path(__file__).resolve().parents[1] / "skills" / skill_id
+    
+    # Check for dedicated settings.json first
+    settings_file = skill_dir / "settings.json"
+    if settings_file.exists():
+        with open(settings_file, "r", encoding="utf-8") as fh:
+            return json.load(fh)
+            
+    # Fallback: check skill.json for 'extra_settings'
+    manifest_file = skill_dir / "skill.json"
+    if manifest_file.exists():
+        with open(manifest_file, "r", encoding="utf-8") as fh:
+            data = json.load(fh)
+            if "extra_settings" in data:
+                return data["extra_settings"]
+                
+    raise HTTPException(status_code=404, detail="settings.json not found for skill")

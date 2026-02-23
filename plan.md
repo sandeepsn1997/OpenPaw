@@ -104,3 +104,32 @@
 7. **Phase 7** — Tasks
 8. **Phase 8** — Conversations
 9. **Phase 9** — Settings
+
+---
+
+## 📧 TODO: Gmail OAuth Configuration
+
+**Status:** Email skill is working, but Gmail integration requires OAuth credentials setup.
+
+### Required Steps:
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select existing
+3. Enable the **Gmail API**
+4. Create OAuth 2.0 credentials (Desktop/Web app type)
+5. Set authorized redirect URI: `http://localhost:8000/api/gmail/callback`
+6. Download/copy **Client ID** and **Client Secret**
+7. Add to `.env` file in project root:
+   ```env
+   GMAIL_CLIENT_ID=your-client-id-here
+   GMAIL_CLIENT_SECRET=your-client-secret-here
+   GMAIL_REDIRECT_URI=http://localhost:8000/api/gmail/callback
+   OAUTH_TOKEN_ENCRYPTION_KEY=your-32-char-minimum-secret-key
+   ```
+8. Restart backend server
+9. Users can then authorize via Settings → Email → Connect
+
+### Notes:
+- Currently returns friendly error: "Gmail integration is not configured on the server."
+- Agent gracefully handles Groq `tool_use_failed` errors for email skill
+- Regex pattern extracts failed function calls and executes locally
+- All test cases passing for email, weather, internet_search skills

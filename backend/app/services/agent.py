@@ -163,3 +163,13 @@ class SkillService:
         self.db.commit()
         
         return self.get_skill(skill_id)
+
+    def delete_skill(self, skill_id: str) -> bool:
+        """Delete a skill."""
+        db_skill = self.db.query(SkillDB).filter(SkillDB.id == skill_id).first()
+        if not db_skill:
+            return False
+            
+        self.db.delete(db_skill)
+        self.db.commit()
+        return True

@@ -5,6 +5,7 @@ from .skills import router as skills_router
 from .knowledge import router as knowledge_router
 from .tasks import router as tasks_router
 from .dashboard import router as dashboard_router
+from .agents import router as agents_router
 
 __all__ = [
     "chat_router",
@@ -12,4 +13,5 @@ __all__ = [
     "knowledge_router",
     "tasks_router",
     "dashboard_router",
+    "agents_router",
 ]

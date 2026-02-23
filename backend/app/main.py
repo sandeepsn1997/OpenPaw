@@ -21,6 +21,7 @@ from .routes import (
     knowledge_router,
     tasks_router,
     dashboard_router,
+    agents_router,
 )
 from .core.skill_extension_loader import load_skill_extensions
 
@@ -78,6 +79,7 @@ app.include_router(skills_router, prefix=f"{settings.api_prefix}/skills")
 app.include_router(knowledge_router, prefix=f"{settings.api_prefix}/knowledge")
 app.include_router(tasks_router, prefix=f"{settings.api_prefix}/tasks")
 app.include_router(dashboard_router, prefix=f"{settings.api_prefix}/dashboard")
+app.include_router(agents_router, prefix=f"{settings.api_prefix}/agents")
 for ext in skill_extensions:
     app.include_router(ext.router, prefix=f"{settings.api_prefix}{ext.route_prefix}")
 

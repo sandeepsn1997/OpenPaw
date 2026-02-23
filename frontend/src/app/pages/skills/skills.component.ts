@@ -277,12 +277,29 @@ export class SkillsComponent implements OnInit {
       const res = await fetch('/api/skills');
       if (res.ok) {
         const data = await res.json();
-        // Separate built-in vs custom (for now we assume all from API are custom unless we have a flag)
-        // Let's just group them all under Built-in if they are the standard ones
-        this.builtInSkills.set(data.filter((s: any) => ['time', 'echo'].includes(s.name.toLowerCase())));
-        this.customSkills.set(data.filter((s: any) => !['time', 'echo'].includes(s.name.toLowerCase())));
+        
+        // The backend returns a list where each skill has a 'manifest' object containing the details
+        const mappedSkills = data.map((s: any) => ({
+          id: s.id,
+          name: s.manifest.name,
+          description: s.manifest.description,
+          version: s.manifest.version,
+          status: s.status,
+          triggers: s.manifest.triggers || [],
+          executionCount: s.execution_count || 0,
+          lastExecuted: s.last_executed
+        }));
+
+        // Put default/common skills in "Built-in" and others in "Custom"
+        // Adjust the list of "built-in" names as needed
+        const builtInNames = ['time', 'echo', 'web_search', 'get_weather', 'email', 'internet_search', 'news_insights', 'stock_analysis'];
+        
+        this.builtInSkills.set(mappedSkills.filter((s: any) => builtInNames.includes(s.name.toLowerCase())));
+        this.customSkills.set(mappedSkills.filter((s: any) => !builtInNames.includes(s.name.toLowerCase())));
       }
-    } catch { /* ignore */ }
+    } catch (err) {
+      console.error('Failed to load skills:', err);
+    }
     this.loading.set(false);
   }
 
