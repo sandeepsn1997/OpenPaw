@@ -1,0 +1,38 @@
+{
+  "name": "news_insights",
+  "description": "Track and summarize latest news by topic, geography, and publication window.",
+  "version": "1.0.0",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "topic": {
+        "type": "string",
+        "description": "Main subject to monitor, e.g. AI regulation, elections, inflation."
+      },
+      "category": {
+        "type": "string",
+        "enum": [
+          "general",
+          "business",
+          "technology",
+          "politics",
+          "health"
+        ],
+        "default": "general"
+      },
+      "time_window": {
+        "type": "string",
+        "enum": [
+          "today",
+          "past_week",
+          "this_month",
+          "this_year"
+        ],
+        "default": "past_week"
+      }
+    },
+    "required": [
+      "topic"
+    ]
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "news_insights_input",
+  "type": "object",
+  "properties": {
+    "topic": {
+      "type": "string",
+      "description": "Main subject to monitor, e.g. AI regulation, elections, inflation."
+    },
+    "category": {
+      "type": "string",
+      "description": "Editorial category filter.",
+      "enum": [
+        "general",
+        "business",
+        "technology",
+        "science",
+        "health",
+        "politics",
+        "sports",
+        "entertainment"
+      ],
+      "default": "general"
+    },
+    "time_window": {
+      "type": "string",
+      "description": "Preset publication range for the news pull.",
+      "enum": ["today", "past_week", "this_month", "this_year", "custom"],
+      "default": "past_week"
+    },
+    "from_date": {
+      "type": "string",
+      "description": "Custom date window start in ISO format (YYYY-MM-DD).",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "to_date": {
+      "type": "string",
+      "description": "Custom date window end in ISO format (YYYY-MM-DD).",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "country": {
+      "type": "string",
+      "description": "Country/market code focus, e.g. us, in, gb.",
+      "default": "global"
+    },
+    "sentiment_breakdown": {
+      "type": "boolean",
+      "description": "Include positive/neutral/negative sentiment summary.",
+      "default": true
+    },
+    "max_articles": {
+      "type": "integer",
+      "description": "Maximum number of articles to include before summarization.",
+      "minimum": 3,
+      "maximum": 100,
+      "default": 25
+    },
+    "group_by": {
+      "type": "string",
+      "description": "How to group the digest output.",
+      "enum": ["source", "category", "day", "week"],
+      "default": "day"
+    }
+  },
+  "required": ["topic"],
+  "additionalProperties": false
+}

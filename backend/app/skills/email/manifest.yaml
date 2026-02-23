@@ -1,0 +1,10 @@
+name: email
+description: Unified Gmail skill for inbox access, unread listing, reading specific emails, sending, replying, and optional AI auto-reply.
+version: 1.0.0
+triggers:
+  - read inbox
+  - unread emails
+  - send email
+  - reply email
+  - gmail
+cron_capable: false

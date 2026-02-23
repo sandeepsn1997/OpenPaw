@@ -1,0 +1,42 @@
+{
+  "name": "stock_analysis",
+  "description": "Analyze equities and ETFs using technical, fundamental, and news-driven signals.",
+  "version": "1.0.0",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "tickers": {
+        "type": "array",
+        "description": "Ticker symbols to analyze, e.g. AAPL, MSFT, NVDA.",
+        "items": {
+          "type": "string"
+        }
+      },
+      "analysis_window": {
+        "type": "string",
+        "enum": [
+          "1d",
+          "1w",
+          "1m",
+          "3m",
+          "6m",
+          "ytd",
+          "1y"
+        ],
+        "default": "1m"
+      },
+      "risk_profile": {
+        "type": "string",
+        "enum": [
+          "conservative",
+          "balanced",
+          "aggressive"
+        ],
+        "default": "balanced"
+      }
+    },
+    "required": [
+      "tickers"
+    ]
+  }
+}

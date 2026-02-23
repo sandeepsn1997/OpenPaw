@@ -1,0 +1,59 @@
+{
+  "name": "email",
+  "description": "Unified Gmail skill for inbox access, unread listing, reading specific emails, sending, replying, and optional AI auto-reply.",
+  "version": "1.0.0",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "action": {
+        "type": "string",
+        "enum": [
+          "read_inbox",
+          "list_unread",
+          "read_email",
+          "send_email",
+          "reply_email",
+          "auto_reply"
+        ],
+        "description": "The action to perform with Gmail"
+      },
+      "message_id": {
+        "type": "string",
+        "description": "Optional message ID for reading or replying"
+      },
+      "to": {
+        "type": "string",
+        "description": "Recipient email address for sending"
+      },
+      "subject": {
+        "type": "string",
+        "description": "Email subject"
+      },
+      "body": {
+        "type": "string",
+        "description": "Content of the email"
+      }
+    },
+    "required": [
+      "action"
+    ]
+  },
+  "extra_settings": {
+    "title": "Email",
+    "provider": "gmail",
+    "auth": {
+      "type": "oauth2",
+      "connectButton": {
+        "label": "Connect Gmail",
+        "endpoint": "/api/skills/email/connect",
+        "method": "GET"
+      },
+      "revokeButton": {
+        "label": "Revoke Gmail Access",
+        "endpoint": "/api/skills/email/revoke",
+        "method": "POST"
+      },
+      "statusEndpoint": "/api/skills/email/status"
+    }
+  }
+}

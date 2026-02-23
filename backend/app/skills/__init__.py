@@ -13,20 +13,26 @@ class SkillManager:
     def discover_skills(self):
         """Automatically load all skills by searching for skill.json and main.py in subdirectories."""
         import os
+        from pathlib import Path
         import json
         import importlib.util
         from ..schemas import SkillManifest, SkillInputSchema
         
-        current_dir = os.path.dirname(__file__)
+        # Point to the local 'app/skills' directory
+        root_dir = Path(__file__).resolve().parent
         
-        for name in os.listdir(current_dir):
-            skill_path = os.path.join(current_dir, name)
+        if not root_dir.exists():
+            print(f"Warning: Skills directory not found at {root_dir}")
+            return
+
+        for name in os.listdir(root_dir):
+            skill_path = root_dir / name
             
-            if os.path.isdir(skill_path):
-                manifest_file = os.path.join(skill_path, "skill.json")
-                logic_file = os.path.join(skill_path, "main.py")
+            if skill_path.is_dir():
+                manifest_file = skill_path / "skill.json"
+                logic_file = skill_path / "main.py"
                 
-                if os.path.exists(manifest_file) and os.path.exists(logic_file):
+                if manifest_file.exists() and logic_file.exists():
                     try:
                         # Load manifest
                         with open(manifest_file, "r") as f:
@@ -45,11 +51,11 @@ class SkillManager:
                         )
                         
                         # Load logic from main.py
-                        spec = importlib.util.spec_from_file_location(f"{name}.logic", logic_file)
+                        spec = importlib.util.spec_from_file_location(f"{name}.logic", str(logic_file))
                         if spec and spec.loader:
                             module = importlib.util.module_from_spec(spec)
                             # Add package context so inner imports work if needed
-                            module.__package__ = "app.skills"
+                            module.__package__ = f"app.skills.{name}"
                             spec.loader.exec_module(module)
                             
                             if hasattr(module, "run"):

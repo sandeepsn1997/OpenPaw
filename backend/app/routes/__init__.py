@@ -11,5 +11,5 @@ __all__ = [
     "skills_router",
     "knowledge_router",
     "tasks_router",
-    "dashboard_router"
+    "dashboard_router",
 ]

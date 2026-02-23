@@ -2,6 +2,7 @@
 # Web Framework
 fastapi==0.111.0
 uvicorn[standard]==0.30.1
+python-multipart>=0.0.9
 
 # Data Validation
 pydantic>=2.0
@@ -21,3 +22,10 @@ groq>=0.4.0
 
 # Optional: Config Files
 pyyaml>=6.0
+
+# Gmail OAuth and Security
+google-auth>=2.30.0
+google-auth-oauthlib>=1.2.0
+google-auth-httplib2>=0.2.0
+google-api-python-client>=2.137.0
+cryptography>=42.0.0

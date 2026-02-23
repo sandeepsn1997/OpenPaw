@@ -1,0 +1,14 @@
+name: stock_analysis
+description: >-
+  Analyze equities and ETFs using technical, fundamental, and news-driven
+  signals. Supports period comparisons (week/month/year), valuation checks,
+  risk metrics, and actionable watchlist summaries.
+version: 1.0.0
+triggers:
+  - stock analysis
+  - analyze ticker
+  - market trend
+  - compare stocks
+  - this month stock performance
+  - yearly stock outlook
+cron_capable: true

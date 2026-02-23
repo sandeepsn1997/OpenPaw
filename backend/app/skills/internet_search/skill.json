@@ -1,0 +1,33 @@
+{
+  "name": "internet_search",
+  "description": "Perform structured web research, compare multiple sources, and return concise findings with citations.",
+  "version": "1.0.0",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "query": {
+        "type": "string",
+        "description": "Natural-language search question or topic to investigate."
+      },
+      "max_results": {
+        "type": "integer",
+        "description": "Maximum number of results to retrieve.",
+        "default": 8
+      },
+      "freshness": {
+        "type": "string",
+        "enum": [
+          "any",
+          "past_24h",
+          "past_week",
+          "past_month",
+          "past_year"
+        ],
+        "default": "any"
+      }
+    },
+    "required": [
+      "query"
+    ]
+  }
+}

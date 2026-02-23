@@ -1,0 +1,27 @@
+{
+  "title": "Email",
+  "description": "Connect Gmail securely via OAuth2.",
+  "provider": "gmail",
+  "auth": {
+    "type": "oauth2",
+    "connectButton": {
+      "label": "Connect Gmail",
+      "endpoint": "/api/skills/email/connect",
+      "method": "GET"
+    },
+    "revokeButton": {
+      "label": "Revoke Gmail Access",
+      "endpoint": "/api/skills/email/revoke",
+      "method": "POST"
+    },
+    "statusEndpoint": "/api/skills/email/status"
+  },
+  "actions": [
+    "read_inbox",
+    "list_unread",
+    "read_email",
+    "send_email",
+    "reply_email",
+    "auto_reply"
+  ]
+}
