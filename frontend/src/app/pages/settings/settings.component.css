@@ -212,3 +212,17 @@ select.input {
   animation: fadeIn 0.3s;
   max-width: 680px;
 }
+.gmail-status {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+}
+
+.gmail-status.connected {
+  border-color: rgba(52, 211, 153, 0.25);
+  background: var(--accent-emerald-dim);
+  color: var(--accent-emerald);
+}
