@@ -20,8 +20,9 @@ from .routes import (
     skills_router,
     knowledge_router,
     tasks_router,
-    dashboard_router
+    dashboard_router,
 )
+from .core.skill_extension_loader import load_skill_extensions
 
 
 class SPAStaticFiles(StaticFiles):
@@ -40,6 +41,8 @@ app = FastAPI(
     version=settings.version,
     debug=settings.debug,
 )
+
+skill_extensions = load_skill_extensions()
 
 # Initialize database
 init_db()
@@ -66,6 +69,8 @@ app.include_router(skills_router, prefix=f"{settings.api_prefix}/skills")
 app.include_router(knowledge_router, prefix=f"{settings.api_prefix}/knowledge")
 app.include_router(tasks_router, prefix=f"{settings.api_prefix}/tasks")
 app.include_router(dashboard_router, prefix=f"{settings.api_prefix}/dashboard")
+for ext in skill_extensions:
+    app.include_router(ext.router, prefix=f"{settings.api_prefix}{ext.route_prefix}")
 
 
 @app.get(f"{settings.api_prefix}/health")

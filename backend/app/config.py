@@ -28,6 +28,13 @@ class Settings(BaseSettings):
     llm_model: str = "llama-3.3-70b-versatile"
     llm_temperature: float = 0.7
     llm_max_tokens: int = 2000
+
+    # Gmail OAuth settings (server-managed; users do not configure manually)
+    gmail_client_id: str = ""
+    gmail_client_secret: str = ""
+    gmail_redirect_uri: str = "http://localhost:8000/api/gmail/callback"
+    # 32+ char secret used for encrypting OAuth tokens at rest
+    oauth_token_encryption_key: str = "change-this-in-production-32-char-minimum"
     
     model_config = ConfigDict(
         env_file=str(Path(__file__).parent.parent.parent / ".env"),

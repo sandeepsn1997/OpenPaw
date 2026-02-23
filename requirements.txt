@@ -21,3 +21,9 @@ groq>=0.4.0
 
 # Optional: Config Files
 pyyaml>=6.0
+
+# Gmail OAuth integration
+google-auth>=2.30.0
+google-auth-oauthlib>=1.2.0
+google-api-python-client>=2.137.0
+cryptography>=42.0.0

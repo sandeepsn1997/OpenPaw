@@ -34,6 +34,32 @@
       </div>
     </div>
 
+
+
+    @if (gmailSettings()) {
+    <div class="card settings-section">
+      <h2 class="section-title">
+        <span class="material-symbols-rounded">mail</span>
+        {{ gmailSettings()!.title }} Skill
+      </h2>
+      <p class="form-hint" style="margin-bottom: 12px;">{{ gmailSettings()!.description }}</p>
+
+      @if (gmailConnected()) {
+      <div class="gmail-status connected">
+        Connected as <strong>{{ gmailEmail() }}</strong>
+      </div>
+      <button class="btn btn-danger" [disabled]="gmailLoading()" (click)="revokeGmail()">
+        {{ gmailSettings()!.auth?.revokeButton?.label || 'Revoke Gmail Access' }}
+      </button>
+      } @else {
+      <div class="gmail-status">Not connected</div>
+      <button class="btn btn-primary" [disabled]="gmailLoading()" (click)="connectGmail()">
+        {{ gmailSettings()!.auth?.connectButton?.label || 'Connect Gmail' }}
+      </button>
+      }
+    </div>
+    }
+
     <!-- Model Configuration -->
     <div class="card settings-section">
       <h2 class="section-title">
