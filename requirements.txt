@@ -2,6 +2,7 @@
 # Web Framework
 fastapi==0.111.0
 uvicorn[standard]==0.30.1
+gunicorn>=21.2.0
 python-multipart>=0.0.9
 
 # Data Validation
@@ -14,11 +15,10 @@ sqlalchemy>=2.0
 # LLM Integration
 groq>=0.4.0
 
-# Optional: Vector Search & Embeddings (for RAG features)
-# Uncomment if using vector search capabilities
-# faiss-cpu>=1.7.4
-# sentence-transformers>=2.0
-# numpy>=1.24
+# Vector Search & Embeddings (for RAG features)
+numpy>=1.24
+faiss-cpu>=1.7.4
+sentence-transformers>=2.0
 
 # Optional: Config Files
 pyyaml>=6.0

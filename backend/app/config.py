@@ -13,8 +13,9 @@ class Settings(BaseSettings):
     app_name: str = "OpenPaw Agent Server"
     version: str = "0.1.0"
     debug: bool = False
+    environment: str = "development"  # development or production
     
-    # CORS settings
+    # CORS settings - parse from comma-separated string if needed
     cors_origins: List[str] = ["*"]
     cors_credentials: bool = True
     cors_methods: List[str] = ["*"]
