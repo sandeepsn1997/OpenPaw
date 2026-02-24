@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, HostListener, signal } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
 
@@ -13,7 +13,17 @@ interface NavItem {
   standalone: true,
   imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
   template: `
-    <div class="app-shell" [class.sidebar-collapsed]="sidebarCollapsed()">
+    <div class="app-shell"
+         [class.sidebar-collapsed]="sidebarCollapsed()"
+         [class.mobile-sidebar-open]="mobileSidebarOpen()">
+      <button class="mobile-menu-btn btn-ghost" (click)="toggleMobileSidebar()" aria-label="Toggle navigation">
+        <span class="material-symbols-rounded">menu</span>
+      </button>
+
+      @if (mobileSidebarOpen()) {
+        <button class="mobile-backdrop" (click)="closeMobileSidebar()" aria-label="Close navigation"></button>
+      }
+
       <!-- Sidebar -->
       <aside class="sidebar">
         <!-- Logo -->
@@ -35,6 +45,7 @@ interface NavItem {
             <a class="nav-item"
                [routerLink]="item.route"
                routerLinkActive="active"
+               (click)="closeMobileSidebar()"
                [title]="item.label">
               <span class="material-symbols-rounded nav-icon">{{ item.icon }}</span>
               <span class="nav-label">{{ item.label }}</span>
@@ -62,6 +73,12 @@ interface NavItem {
       display: flex;
       height: 100vh;
       overflow: hidden;
+      position: relative;
+    }
+
+    .mobile-menu-btn,
+    .mobile-backdrop {
+      display: none;
     }
 
     /* ---- Sidebar ---- */
@@ -227,10 +244,51 @@ interface NavItem {
       overflow: hidden;
       background: var(--bg-primary);
     }
+
+    @media (max-width: 900px) {
+      .mobile-menu-btn {
+        display: flex;
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        z-index: 320;
+        background: rgba(17, 24, 39, 0.9);
+        border: 1px solid var(--border-primary);
+      }
+
+      .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        transform: translateX(-100%);
+        transition: transform var(--transition-base);
+        z-index: 330;
+        box-shadow: var(--shadow-lg);
+      }
+
+      .mobile-sidebar-open .sidebar {
+        transform: translateX(0);
+      }
+
+      .mobile-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 310;
+        border: 0;
+        background: rgba(2, 6, 23, 0.6);
+      }
+
+      .main-content {
+        width: 100%;
+      }
+    }
   `]
 })
 export class AppComponent {
   sidebarCollapsed = signal(false);
+  mobileSidebarOpen = signal(false);
 
   navItems: NavItem[] = [
     { icon: 'dashboard', label: 'Dashboard', route: '/dashboard' },
@@ -243,5 +301,20 @@ export class AppComponent {
 
   toggleSidebar(): void {
     this.sidebarCollapsed.update(v => !v);
+  }
+
+  toggleMobileSidebar(): void {
+    this.mobileSidebarOpen.update(v => !v);
+  }
+
+  closeMobileSidebar(): void {
+    this.mobileSidebarOpen.set(false);
+  }
+
+  @HostListener('window:resize')
+  onResize(): void {
+    if (window.innerWidth > 900) {
+      this.mobileSidebarOpen.set(false);
+    }
   }
 }

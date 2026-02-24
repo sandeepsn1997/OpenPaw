@@ -1,4 +1,4 @@
-import { Component, signal, effect, ViewChild, ElementRef, OnInit } from '@angular/core';
+import { Component, signal, effect, ViewChild, ElementRef, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -25,6 +25,10 @@ interface ChatResponse {
   template: `
     <div class="chat-page">
       <!-- Conversations sidebar -->
+      @if (isMobile() && showConversations()) {
+        <button class="conv-backdrop" (click)="showConversations.set(false)" aria-label="Close conversations"></button>
+      }
+
       <div class="conv-sidebar" [class.open]="showConversations()">
         <div class="conv-header">
           <h3>Conversations</h3>
@@ -69,7 +73,7 @@ interface ChatResponse {
               {{ loading() ? 'Thinking...' : 'Ready' }}
             </span>
           </div>
-          <button class="btn btn-secondary" (click)="newConversation()" style="margin-left: auto;">
+          <button class="btn btn-secondary new-chat-btn" (click)="newConversation()" style="margin-left: auto;">
             <span class="material-symbols-rounded" style="font-size: 18px;">add</span>
             New Chat
           </button>
@@ -168,6 +172,11 @@ interface ChatResponse {
       display: flex;
       height: 100%;
       overflow: hidden;
+      position: relative;
+    }
+
+    .conv-backdrop {
+      display: none;
     }
 
     /* ---- Conversation Sidebar ---- */
@@ -536,17 +545,91 @@ interface ChatResponse {
     }
 
     @media (max-width: 768px) {
+      .chat-header {
+        padding: 12px 14px;
+      }
+
+      .chat-header-info h2 {
+        font-size: 0.92rem;
+      }
+
+      .chat-status {
+        font-size: 0.72rem;
+      }
+
+      .new-chat-btn {
+        padding: 8px 10px;
+        min-width: auto;
+      }
+
+      .new-chat-btn span:last-child {
+        display: none;
+      }
+
+      .chat-messages {
+        padding: 14px;
+        gap: 14px;
+      }
+
+      .chat-welcome {
+        padding: 24px 10px;
+      }
+
+      .chat-welcome h2 {
+        font-size: 1.2rem;
+      }
+
+      .suggestions {
+        width: 100%;
+      }
+
+      .suggestion-chip {
+        width: 100%;
+        text-align: left;
+      }
+
+      .message {
+        max-width: 100%;
+      }
+
+      .msg-body {
+        width: min(100%, 100vw - 96px);
+      }
+
+      .chat-input-area {
+        padding: 12px;
+      }
+
+      .chat-textarea {
+        min-height: 42px;
+      }
+
+      .send-btn {
+        width: 42px;
+        height: 42px;
+      }
+
       .conv-sidebar {
         position: absolute;
         left: -280px;
         top: 0;
         bottom: 0;
-        z-index: 200;
+        z-index: 220;
         transition: left var(--transition-base);
+        box-shadow: var(--shadow-lg);
       }
 
       .conv-sidebar.open { left: 0; }
       .mobile-toggle { display: flex; }
+
+      .conv-backdrop {
+        display: block;
+        position: absolute;
+        inset: 0;
+        background: rgba(2, 6, 23, 0.55);
+        border: 0;
+        z-index: 210;
+      }
     }
   `]
 })
@@ -559,6 +642,7 @@ export class ChatComponent implements OnInit {
   error = signal<string | null>(null);
   conversationId = signal<string | null>(null);
   showConversations = signal(true);
+  isMobile = signal(false);
   conversations = signal<{ id: string; preview: string; messageCount: number }[]>([]);
 
   constructor() {
@@ -569,6 +653,7 @@ export class ChatComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.onResize();
     this.initChat();
   }
 
@@ -619,6 +704,10 @@ export class ChatComponent implements OnInit {
         { id: data.conversation_id, preview: 'New Chat', messageCount: 0 },
         ...current,
       ]);
+
+      if (this.isMobile()) {
+        this.showConversations.set(false);
+      }
     } catch (err) {
       this.error.set(err instanceof Error ? err.message : 'Failed to create conversation');
     }
@@ -631,6 +720,9 @@ export class ChatComponent implements OnInit {
       if (!res.ok) throw new Error('Failed to load conversation');
       const data = await res.json();
       this.messages.set(data.messages || []);
+      if (this.isMobile()) {
+        this.showConversations.set(false);
+      }
     } catch (err) {
       this.error.set(err instanceof Error ? err.message : 'Failed to load conversation');
     }
@@ -731,6 +823,17 @@ export class ChatComponent implements OnInit {
 
   toggleConversations(): void {
     this.showConversations.update(v => !v);
+  }
+
+  @HostListener('window:resize')
+  onResize(): void {
+    const mobile = window.innerWidth <= 768;
+    this.isMobile.set(mobile);
+    if (!mobile) {
+      this.showConversations.set(true);
+    } else if (this.messages().length > 0) {
+      this.showConversations.set(false);
+    }
   }
 
   private scrollToBottom(): void {
