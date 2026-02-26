@@ -74,6 +74,7 @@ class SkillManager:
         from ..schemas import SkillStatus
         import json
 
+        # Add or update existing skills
         for name, skill in self.skills.items():
             manifest = skill.manifest
             db_skill = db.query(SkillDB).filter(SkillDB.id == name).first()
@@ -92,6 +93,12 @@ class SkillManager:
                 db_skill.description = manifest.description
                 db_skill.manifest = manifest.model_dump_json()
             
+        # Remove skills from DB that are no longer in the filesystem
+        all_db_skills = db.query(SkillDB).all()
+        for db_skill in all_db_skills:
+            if db_skill.id not in self.skills:
+                db.delete(db_skill)
+
         db.commit()
 
     def get_tool_definitions(self) -> List[Dict]:

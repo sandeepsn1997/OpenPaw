@@ -64,21 +64,37 @@ def delete_skill(skill_id: str, db: Session = Depends(get_db)):
 @router.get("/{skill_id}/settings", response_model=Dict[str, Any])
 def get_skill_settings(skill_id: str):
     """Load optional per-skill UI settings config."""
-    # Look in the internal backend/app/skills directory
-    skill_dir = Path(__file__).resolve().parents[1] / "skills" / skill_id
+    # Strip and lowercase to be robust against frontend inconsistencies
+    skill_id = skill_id.strip().lower()
     
-    # Check for dedicated settings.json first
+    # Robust path resolution
+    current_dir = Path(__file__).resolve().parent
+    skill_dir = current_dir.parent / "skills" / skill_id
+    
     settings_file = skill_dir / "settings.json"
+    manifest_file = skill_dir / "skill.json"
+    
+    print(f"[SkillsAPI] Loading settings for skill_id='{skill_id}'")
+    print(f"[SkillsAPI] Path: {settings_file}")
+
+    # Check for dedicated settings.json first
     if settings_file.exists():
-        with open(settings_file, "r", encoding="utf-8") as fh:
-            return json.load(fh)
+        try:
+            with open(settings_file, "r", encoding="utf-8") as fh:
+                return json.load(fh)
+        except Exception as e:
+            print(f"[SkillsAPI] Error reading settings.json: {e}")
+            raise HTTPException(status_code=500, detail=f"Error reading settings.json: {e}")
             
     # Fallback: check skill.json for 'extra_settings'
-    manifest_file = skill_dir / "skill.json"
     if manifest_file.exists():
-        with open(manifest_file, "r", encoding="utf-8") as fh:
-            data = json.load(fh)
-            if "extra_settings" in data:
-                return data["extra_settings"]
-                
-    raise HTTPException(status_code=404, detail="settings.json not found for skill")
+        try:
+            with open(manifest_file, "r", encoding="utf-8") as fh:
+                data = json.load(fh)
+                if "extra_settings" in data:
+                    return data["extra_settings"]
+        except Exception as e:
+            print(f"[SkillsAPI] Error reading skill.json: {e}")
+
+    print(f"[SkillsAPI] No settings found for '{skill_id}'")
+    raise HTTPException(status_code=404, detail=f"settings.json not found for skill '{skill_id}'")

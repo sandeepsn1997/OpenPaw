@@ -64,17 +64,6 @@ class SimpleAgent:
             # Try to extract a tool call from the exception text and continue locally.
             err = str(e)
             
-            # Check for email skill first before regex extraction
-            if "email" in err.lower():
-                from .skills.email.backend import GmailService
-                try:
-                    gmail_service = GmailService(db)
-                    gmail_status = gmail_service.status()
-                    if not gmail_status.get("connected"):
-                        # Return friendly message for email connection
-                        return "To manage your email, I need permission to connect to your Gmail account. Please go to Settings, select Email, and authorize me to access your mail. Once connected, I can help you read and send emails.", "email"
-                except Exception:
-                    pass
 
             # Use regex to extract tool call from error message
             matches = re.findall(r"<function=([A-Za-z0-9_\-]+)=?((?:.|\n)*?)</function>", err)
@@ -122,56 +111,55 @@ class SimpleAgent:
                 # Could not extract tool call, return generic message
                 return "I encountered an issue processing your request. Please try again.", None
 
-        # If the model wants to call a tool, execute them locally
-        if tool_calls:
-            # For LLM context, create a proper assistant message
-            assistant_message = {"role": "assistant", "content": "", "tool_calls": tool_calls}
-            messages.append(assistant_message)
+        if not tool_calls:
+            # Handle non-tool responses correctly
+            content = getattr(response_message, "content", None)
+            if content is None and isinstance(response_message, dict):
+                content = response_message.get("content", "")
+            return content or "", "groq"
 
-            tool_used_names = []
-            for tool_call in tool_calls:
-                function_name = tool_call.function.name
-                function_args = json.loads(tool_call.function.arguments)
+        # If we reach here, tool_calls existed and were processed
+        # For LLM context, create a proper assistant message
+        assistant_message = {"role": "assistant", "content": "", "tool_calls": tool_calls}
+        messages.append(assistant_message)
 
-                print(f"Agent calling tool: {function_name} with {function_args}")
+        tool_used_names = []
+        for tool_call in tool_calls:
+            function_name = tool_call.function.name
+            function_args = json.loads(tool_call.function.arguments)
 
-                # Check if email skill is being called but Gmail is not connected
-                if function_name == "email":
-                    from .skills.email.backend import GmailService
-                    gmail_service = GmailService(db)
-                    gmail_status = gmail_service.status()
-                    if not gmail_status.get("connected"):
-                        # Return a friendly message telling user to connect email via settings
-                        tool_result = "To access your emails, please authorize Gmail access through the Settings page. Click Settings > Email > Connect, then return to try again."
-                        tool_used_names.append(function_name)
-                        # Add this result to messages and skip to next tool
-                        messages.append({
-                            "tool_call_id": tool_call.id,
-                            "role": "tool",
-                            "name": function_name,
-                            "content": tool_result,
-                        })
-                        continue
+            print(f"Agent calling tool: {function_name} with {function_args}")
 
-                # Execute the skill
-                tool_result = await skill_manager.execute_skill(function_name, function_args)
-                tool_used_names.append(function_name)
+            # Check if email skill is being called but Gmail is not connected
+            if function_name == "email":
+                from .skills.email.backend import GmailService
+                gmail_service = GmailService(db)
+                gmail_status = gmail_service.status()
+                if not gmail_status.get("connected"):
+                    # Return a friendly message telling user to connect email via settings
+                    tool_result = "To access your emails, please authorize Gmail access through the Settings page. Click Settings > Email > Connect, then return to try again."
+                    tool_used_names.append(function_name)
+                    # Add this result to messages and skip to next tool
+                    messages.append({
+                        "tool_call_id": tool_call.id,
+                        "role": "tool",
+                        "name": function_name,
+                        "content": tool_result,
+                    })
+                    continue
 
-                # Add tool result to messages
-                messages.append({
-                    "tool_call_id": tool_call.id,
-                    "role": "tool",
-                    "name": function_name,
-                    "content": tool_result,
-                })
+            # Execute the skill
+            tool_result = await skill_manager.execute_skill(function_name, function_args)
+            tool_used_names.append(function_name)
 
-            # Second LLM call to generate final response based on tool results
-            final_reply = llm.chat(messages)
-            return final_reply, ", ".join(tool_used_names)
+            # Add tool result to messages
+            messages.append({
+                "tool_call_id": tool_call.id,
+                "role": "tool",
+                "name": function_name,
+                "content": tool_result,
+            })
 
-        # No tool called, return normal reply
-        # response_message may be an SDK object with .content
-        content = getattr(response_message, "content", None)
-        if content is None and isinstance(response_message, dict):
-            content = response_message.get("content", "")
-        return content or "", "groq"
+        # Second LLM call to generate final response based on tool results
+        final_reply = llm.chat(messages)
+        return final_reply, ", ".join(tool_used_names)

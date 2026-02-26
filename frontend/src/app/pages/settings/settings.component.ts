@@ -118,7 +118,12 @@ export class SettingsComponent implements OnInit {
 
       this.skillSettings.update(skills => skills.map(s => {
         if (s.id === skill.id) {
-          return { ...s, connected: Boolean(data.connected), statusInfo: data };
+          const updated = { ...s, connected: Boolean(data.connected), statusInfo: data };
+          // If this is WhatsApp and using wa_web, check link status too
+          if (s.id === 'whatsapp' && (data.provider_type === 'wa_web' || s.values['provider_type'] === 'wa_web')) {
+            this.checkAndPollWhatsAppLink(updated);
+          }
+          return updated;
         }
         return s;
       }));
@@ -234,26 +239,42 @@ export class SettingsComponent implements OnInit {
     }
   }
 
+  private checkAndPollWhatsAppLink(skill: SkillSettings) {
+    // Find the action_qr field to get endpoints
+    const field = skill.auth?.fields?.find(f => f.type === 'action_qr');
+    if (field) {
+      if (skill.linkStatus !== 'connected' && skill.linkStatus !== 'error') {
+        this.pollStatus(field, skill);
+      }
+    }
+  }
+
   private pollStatus(field: SkillSettingsField, skill: SkillSettings) {
     if (!field.status_endpoint || !field.qr_endpoint) return;
 
     const poll = async () => {
       try {
         const res = await fetch(field.status_endpoint!);
+        if (!res.ok) return;
         const data = await res.json();
 
         skill.linkStatus = data.status;
 
         if (data.is_connected) {
           skill.qrImage = undefined;
-          this.loadSkillStatus(skill);
+          skill.connected = true;
+          // IMPORTANT: Update the signal so the UI reflects the change, but do NOT call loadSkillStatus
+          // to avoid an infinite polling loop.
+          this.skillSettings.update(skills => [...skills]);
           return;
         }
 
         if (data.status === 'qr_ready') {
           const qrRes = await fetch(field.qr_endpoint!);
-          const qrData = await qrRes.json();
-          skill.qrImage = qrData.qr;
+          if (qrRes.ok) {
+            const qrData = await qrRes.json();
+            skill.qrImage = qrData.qr;
+          }
         }
 
         // Continue polling if not connected and we are still viewing this provider
@@ -268,6 +289,7 @@ export class SettingsComponent implements OnInit {
 
     poll();
   }
+
 
   toggleApiKeyVisibility(): void {
     this.apiKeyMasked.update(v => !v);

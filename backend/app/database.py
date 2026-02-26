@@ -79,3 +79,14 @@ class TaskDB(Base):
     next_run_at = Column(DateTime, nullable=True)  # Next scheduled execution
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class WhatsAppConfigDB(Base):
+    """WhatsApp configuration database model."""
+
+    __tablename__ = "whatsapp_config"
+
+    user_id = Column(String, primary_key=True, default="default")
+    provider_type = Column(String, nullable=False, default="twilio")
+    config_json = Column(Text, nullable=False)  # JSON blob with provider credentials
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

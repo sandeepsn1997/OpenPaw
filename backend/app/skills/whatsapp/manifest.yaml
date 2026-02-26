@@ -1,0 +1,14 @@
+name: whatsapp
+description: >-
+  Send WhatsApp messages and media via Twilio. Supports sending text messages,
+  images, videos, and documents to any WhatsApp number. Can also check message
+  delivery status.
+version: 1.0.0
+triggers:
+  - send whatsapp
+  - whatsapp message
+  - text on whatsapp
+  - message on whatsapp
+  - send a whatsapp
+  - whatsapp
+cron_capable: false

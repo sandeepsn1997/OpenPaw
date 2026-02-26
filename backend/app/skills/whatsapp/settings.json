@@ -1,0 +1,91 @@
+{
+  "title": "WhatsApp",
+  "description": "Send and Receive WhatsApp messages. Choose your preferred connection method.",
+  "provider": "whatsapp",
+  "auth": {
+    "type": "api_key",
+    "fields": [
+      {
+        "key": "provider_type",
+        "label": "Messaging Provider",
+        "type": "select",
+        "options": [
+          {
+            "value": "wa_web",
+            "label": "Direct WhatsApp Web (QR Linking - Most Powerful)"
+          },
+          {
+            "value": "callmebot",
+            "label": "CallMeBot (Easiest - Forever Free for self-notifications)"
+          },
+          {
+            "value": "meta_official",
+            "label": "Meta Cloud API (Official - Permanent & Robust)"
+          },
+          {
+            "value": "twilio",
+            "label": "Twilio (Professional - Reliable)"
+          }
+        ],
+        "hint": "WhatsApp Web linking allows you to use your OWN account directly."
+      },
+      {
+        "key": "wa_web_status",
+        "label": "WhatsApp Web Status",
+        "type": "action_qr",
+        "condition": "provider_type === 'wa_web'",
+        "action_label": "Generate Login QR",
+        "action_endpoint": "/api/skills/whatsapp/link/start",
+        "status_endpoint": "/api/skills/whatsapp/link/status",
+        "qr_endpoint": "/api/skills/whatsapp/link/qr"
+      },
+      {
+        "key": "cmb_apikey",
+        "label": "CallMeBot API Key",
+        "placeholder": "123123",
+        "condition": "provider_type === 'callmebot'",
+        "hint": "Get your key by messaging +34 644 87 21 57 on WhatsApp with 'I allow callmebot to send me messages'."
+      },
+      {
+        "key": "meta_access_token",
+        "label": "Meta Access Token",
+        "secret": true,
+        "condition": "provider_type === 'meta_official'",
+        "hint": "Long-lived or System User token from Meta Developer Portal."
+      },
+      {
+        "key": "meta_phone_id",
+        "label": "Meta Phone Number ID",
+        "condition": "provider_type === 'meta_official'"
+      },
+      {
+        "key": "account_sid",
+        "label": "Twilio Account SID",
+        "condition": "provider_type === 'twilio'"
+      },
+      {
+        "key": "auth_token",
+        "label": "Twilio Auth Token",
+        "secret": true,
+        "condition": "provider_type === 'twilio'"
+      },
+      {
+        "key": "from_number",
+        "label": "Sender Number",
+        "placeholder": "+1234567890",
+        "condition": "provider_type !== 'callmebot' && provider_type !== 'wa_web'",
+        "hint": "For Twilio Sandbox use +14155238886. For Meta, use your registered Test Number."
+      }
+    ],
+    "statusEndpoint": "/api/skills/whatsapp/status",
+    "saveEndpoint": "/api/skills/whatsapp/configure",
+    "saveMethod": "POST"
+  },
+  "actions": [
+    "send_message",
+    "send_media",
+    "check_status",
+    "get_config"
+  ],
+  "setup_guide": "### Choose Your Provider\n\n**1. Direct WhatsApp Web (Recommended)**\n- Select 'Direct WhatsApp Web'.\n- Click 'Generate Login QR'.\n- Scan the QR code with your WhatsApp app (Linked Devices).\n- Once connected, you can send/receive messages as YOURSELF to ANYONE.\n\n**2. CallMeBot (Easiest / Self-only)**\n- Contact `+34 644 87 21 57` on WhatsApp.\n- Message: `I allow callmebot to send me messages`.\n- Paste the APIKEY here.\n\n**3. Meta Cloud API (Official)**\n- Use [developers.facebook.com](https://developers.facebook.com).\n- Free tier includes 1000 conversations/month."
+}

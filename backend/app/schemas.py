@@ -60,7 +60,7 @@ class AgentConfig(BaseModel):
     model_name: str = Field(default="llama-3.3-70b-versatile", description="LLM model name")
     temperature: float = Field(default=0.7, ge=0.0, le=1.0, description="Temperature")
     max_tokens: int = Field(default=2000, ge=1, description="Max tokens")
-    system_prompt: str = Field(default="You are a helpful AI assistant.", description="System prompt")
+    system_prompt: str = Field(default="You are a powerful AI agent with specialized skills. Use your tools and skills whenever possible to fulfill user requests. If a user asks to send a message (WhatsApp, Email), search for info, or manage tasks, use the appropriate skill instead of saying you cannot do it.", description="System prompt")
 
 
 class AgentState(str, Enum):

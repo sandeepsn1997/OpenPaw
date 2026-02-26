@@ -74,6 +74,9 @@
           } @else if (field.type === 'action_qr') {
           <div class="qr-linking-zone" style="margin-top: 10px;">
             @if (!skill.connected && !skill.qrImage) {
+            <p class="hint" style="font-size: 0.75rem; color: #888; margin-bottom: 8px;">
+              Note: If you have linked before, the account may reconnect automatically.
+            </p>
             <button class="btn btn-primary" (click)="triggerAction(field, skill)" [disabled]="skill.loading">
               {{ field.action_label || 'Start Linking' }}
             </button>
@@ -95,6 +98,10 @@
               <span class="material-symbols-rounded">check_circle</span>
               Linked as Personal Account
             </div>
+            <button class="btn btn-danger btn-sm" style="margin-top: 5px; width: 100%;" (click)="revokeAccess(skill)"
+              [disabled]="skill.loading">
+              Revoke Account
+            </button>
             }
           </div>
           } @else {
@@ -121,14 +128,21 @@
         Configured and Ready
         }
       </div>
+      @if (skill.id !== 'whatsapp') {
       <button class="btn btn-danger" [disabled]="skill.loading" (click)="revokeAccess(skill)">
         {{ skill.auth?.revokeButton?.label || 'Revoke Access' }}
       </button>
+      }
       } @else {
-      <div class="status-box">Not configured</div>
+      <div class="status-box"
+        *ngIf="skill.id !== 'whatsapp' || (skill.id === 'whatsapp' && (skill.values['provider_type'] || skill.statusInfo?.['provider_type']) !== 'wa_web')">
+        Not configured
+      </div>
+      @if (skill.id !== 'whatsapp') {
       <button class="btn btn-primary" [disabled]="skill.loading" (click)="handleAuthAction(skill)">
         {{ skill.auth?.connectButton?.label || (skill.auth?.type === 'api_key' ? 'Save Configuration' : 'Connect') }}
       </button>
+      }
       }
     </div>
     }
