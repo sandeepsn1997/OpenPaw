@@ -29,3 +29,7 @@ google-auth-oauthlib>=1.2.0
 google-auth-httplib2>=0.2.0
 google-api-python-client>=2.137.0
 cryptography>=42.0.0
+
+# Messaging Skills
+twilio>=9.0.0
+
