@@ -14,7 +14,7 @@ interface PersistentFile {
   template: `
     <div class="page-container">
       <div class="page-header">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
           <div>
             <h1>Knowledge & Memory</h1>
             <p>Manage both project documents and agentic persistence</p>
@@ -387,6 +387,71 @@ interface PersistentFile {
     }
     .form-group { display: flex; flex-direction: column; gap: 6px; }
     .form-group label { font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); }
+
+    @media (max-width: 768px) {
+      .tabs-container {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .tab-btn {
+        flex-shrink: 0;
+        white-space: nowrap;
+      }
+
+      .memory-layout {
+        grid-template-columns: 1fr;
+        height: auto;
+        min-height: auto;
+      }
+
+      .memory-sidebar {
+        flex-direction: row;
+        overflow-x: auto;
+        gap: 8px;
+        padding-bottom: 8px;
+      }
+
+      .memory-file-item {
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+
+      .editor-area {
+        min-height: 300px;
+      }
+
+      .editor-header {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+      }
+
+      .doc-header {
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .doc-meta {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .doc-actions {
+        margin-left: auto;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .doc-card {
+        padding: 14px !important;
+      }
+
+      .doc-info h3 {
+        font-size: 0.88rem;
+      }
+    }
   `]
 })
 export class KnowledgeComponent implements OnInit {

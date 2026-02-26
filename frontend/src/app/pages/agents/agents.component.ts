@@ -20,7 +20,7 @@ interface Agent {
   template: `
     <div class="page-container">
       <div class="page-header">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
           <div>
             <h1>Agents</h1>
             <p>Create and manage your AI agents</p>
@@ -285,6 +285,16 @@ interface Agent {
     select.input {
       appearance: none;
       cursor: pointer;
+    }
+
+    @media (max-width: 768px) {
+      .agents-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .form-row {
+        grid-template-columns: 1fr;
+      }
     }
   `]
 })

@@ -365,6 +365,28 @@ interface ActivityItem {
         grid-template-columns: 1fr;
       }
     }
+
+    @media (max-width: 480px) {
+      .actions-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+
+      .action-card {
+        padding: 14px 10px;
+        font-size: 0.78rem;
+      }
+
+      .action-icon {
+        width: 36px;
+        height: 36px;
+      }
+
+      .model-specs {
+        flex-wrap: wrap;
+        gap: 14px;
+      }
+    }
   `]
 })
 export class DashboardComponent implements OnInit {

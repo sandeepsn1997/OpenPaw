@@ -212,17 +212,106 @@ select.input {
   animation: fadeIn 0.3s;
   max-width: 680px;
 }
-.gmail-status {
-  margin-bottom: 12px;
-  padding: 10px 12px;
+
+.setup-guide {
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  margin-bottom: 20px;
+  border-left: 3px solid var(--accent-primary);
+}
+
+.setup-guide .material-symbols-rounded {
+  color: var(--accent-primary);
+  flex-shrink: 0;
+}
+
+.guide-content {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  white-space: pre-line;
+}
+
+.skill-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.status-box {
+  margin-bottom: 16px;
+  padding: 10px 14px;
   border: 1px solid var(--border-primary);
   border-radius: var(--radius-sm);
   color: var(--text-secondary);
   font-size: 0.82rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.gmail-status.connected {
+.status-box.connected {
   border-color: rgba(52, 211, 153, 0.25);
   background: var(--accent-emerald-dim);
   color: var(--accent-emerald);
+}
+
+.status-box .material-symbols-rounded {
+  font-size: 18px;
+}
+
+@media (max-width: 768px) {
+  .settings-sections {
+    max-width: 100%;
+  }
+
+  .settings-footer {
+    max-width: 100%;
+  }
+
+  .save-toast {
+    max-width: 100%;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .danger-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .api-key-row {
+    flex-direction: column;
+  }
+
+  .api-key-row .input {
+    width: 100%;
+  }
+
+  .theme-toggle {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .slider-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .slider-val {
+    text-align: left;
+  }
 }

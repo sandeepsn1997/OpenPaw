@@ -20,7 +20,7 @@ interface Skill {
   template: `
     <div class="page-container">
       <div class="page-header">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
           <div>
             <h1>Skills</h1>
             <p>Manage agent skills and plugins</p>
@@ -32,10 +32,8 @@ interface Skill {
         </div>
       </div>
 
-      <!-- Built-in skills -->
-      <h3 class="section-label">Built-in Skills</h3>
       <div class="skills-grid">
-        @for (skill of builtInSkills(); track skill.id) {
+        @for (skill of allSkills(); track skill.id) {
           <div class="card skill-card">
             <div class="skill-header">
               <div class="skill-icon" [class]="skill.status === 'active' ? 'emerald' : 'rose'">
@@ -76,29 +74,6 @@ interface Skill {
           </div>
         }
       </div>
-
-      @if (customSkills().length > 0) {
-        <h3 class="section-label" style="margin-top: 28px;">Custom Skills</h3>
-        <div class="skills-grid">
-          @for (skill of customSkills(); track skill.id) {
-            <div class="card skill-card">
-              <div class="skill-header">
-                <div class="skill-icon purple">
-                  <span class="material-symbols-rounded">code</span>
-                </div>
-                <div class="skill-title">
-                  <h3>{{ skill.name }}</h3>
-                  <span class="badge badge-emerald">{{ skill.status }}</span>
-                </div>
-                <button class="btn-ghost" (click)="deleteSkill(skill.id)">
-                  <span class="material-symbols-rounded" style="font-size: 18px;">delete</span>
-                </button>
-              </div>
-              <p class="skill-desc">{{ skill.description }}</p>
-            </div>
-          }
-        </div>
-      }
 
       <!-- Create Modal -->
       @if (showCreateModal()) {
@@ -258,11 +233,16 @@ interface Skill {
     }
     .form-group { display: flex; flex-direction: column; gap: 6px; }
     .form-group label { font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); }
+
+    @media (max-width: 768px) {
+      .skills-grid {
+        grid-template-columns: 1fr;
+      }
+    }
   `]
 })
 export class SkillsComponent implements OnInit {
-  builtInSkills = signal<any[]>([]);
-  customSkills = signal<any[]>([]);
+  allSkills = signal<any[]>([]);
   showCreateModal = signal(false);
   loading = signal(false);
   newSkill = { name: '', description: '', triggersStr: '' };
@@ -277,7 +257,7 @@ export class SkillsComponent implements OnInit {
       const res = await fetch('/api/skills');
       if (res.ok) {
         const data = await res.json();
-        
+
         // The backend returns a list where each skill has a 'manifest' object containing the details
         const mappedSkills = data.map((s: any) => ({
           id: s.id,
@@ -290,12 +270,7 @@ export class SkillsComponent implements OnInit {
           lastExecuted: s.last_executed
         }));
 
-        // Put default/common skills in "Built-in" and others in "Custom"
-        // Adjust the list of "built-in" names as needed
-        const builtInNames = ['time', 'echo', 'web_search', 'get_weather', 'email', 'internet_search', 'news_insights', 'stock_analysis'];
-        
-        this.builtInSkills.set(mappedSkills.filter((s: any) => builtInNames.includes(s.name.toLowerCase())));
-        this.customSkills.set(mappedSkills.filter((s: any) => !builtInNames.includes(s.name.toLowerCase())));
+        this.allSkills.set(mappedSkills);
       }
     } catch (err) {
       console.error('Failed to load skills:', err);
@@ -332,6 +307,6 @@ export class SkillsComponent implements OnInit {
   async deleteSkill(id: string): Promise<void> {
     // Backend DELETE skills not strictly in the router yet, but we can assume it follows pattern
     // For now we'll just refresh list if we had a delete endpoint
-    this.customSkills.update(list => list.filter(s => s.id !== id));
+    this.allSkills.update(list => list.filter(s => s.id !== id));
   }
 }

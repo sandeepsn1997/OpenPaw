@@ -783,6 +783,11 @@ input[type="number"].input {
 
 /* ============ Responsive ============ */
 @media (max-width: 768px) {
+  .header-row {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
   .task-top-row {
     flex-direction: column;
   }
@@ -805,5 +810,62 @@ input[type="number"].input {
 
   .mini-stat {
     padding: 6px 12px;
+  }
+
+  .search-view-bar {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .view-switcher {
+    align-self: flex-start;
+  }
+
+  /* Kanban board stacks vertically on mobile */
+  .task-board {
+    flex-direction: column;
+    overflow-x: visible;
+  }
+
+  .board-column {
+    min-width: 0;
+    max-height: none;
+  }
+
+  .task-main {
+    padding: 12px 14px;
+  }
+
+  .task-meta {
+    gap: 6px;
+  }
+
+  .meta-chip {
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .mini-stat-label {
+    display: none;
+  }
+
+  .mini-stat {
+    padding: 6px 10px;
+  }
+
+  .switcher-btn {
+    padding: 6px 10px;
+    font-size: 0.78rem;
+    gap: 4px;
+  }
+
+  .board-card {
+    padding: 12px;
+  }
+
+  .task-title {
+    font-size: 0.88rem;
   }
 }

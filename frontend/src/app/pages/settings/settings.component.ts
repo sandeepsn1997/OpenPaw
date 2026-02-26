@@ -2,14 +2,44 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
-interface GmailSkillSettings {
+interface SkillSettingsField {
+  key: string;
+  label: string;
+  type?: 'text' | 'password' | 'select' | 'action_qr';
+  options?: { value: string; label: string }[];
+  placeholder?: string;
+  secret?: boolean;
+  hint?: string;
+  condition?: string; // e.g. "auth_type === 'callmebot'"
+  action_label?: string;
+  action_endpoint?: string;
+  status_endpoint?: string;
+  qr_endpoint?: string;
+}
+
+interface SkillSettings {
+  id: string;
   title: string;
   description: string;
+  setup_guide?: string;
+  provider: string;
   auth?: {
+    type: 'oauth2' | 'api_key';
     connectButton?: { endpoint: string; label: string };
     revokeButton?: { endpoint: string; label: string };
+    saveEndpoint?: string;
+    saveMethod?: string;
     statusEndpoint?: string;
+    fields?: SkillSettingsField[];
   };
+  actions?: string[];
+  // Dynamic values for fields
+  values: Record<string, any>;
+  connected: boolean;
+  statusInfo?: any;
+  loading: boolean;
+  qrImage?: string;
+  linkStatus?: string;
 }
 
 @Component({
@@ -28,10 +58,8 @@ export class SettingsComponent implements OnInit {
   theme = signal<'dark' | 'light'>('dark');
   saved = signal(false);
 
-  gmailSettings = signal<GmailSkillSettings | null>(null);
-  gmailConnected = signal(false);
-  gmailEmail = signal('');
-  gmailLoading = signal(false);
+  skillSettings = signal<SkillSettings[]>([]);
+  globalLoading = signal(false);
 
   models = [
     { value: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B — Versatile' },
@@ -40,67 +68,205 @@ export class SettingsComponent implements OnInit {
   ];
 
   ngOnInit(): void {
-    this.loadGmailSkillSettings();
+    this.loadAllSkillSettings();
   }
 
-  async loadGmailSkillSettings(): Promise<void> {
+  async loadAllSkillSettings(): Promise<void> {
+    this.globalLoading.set(true);
     try {
-      const settingsRes = await fetch('/api/skills/email/settings');
-      if (!settingsRes.ok) return;
+      const skillsRes = await fetch('/api/skills');
+      if (!skillsRes.ok) return;
+      const skills = await skillsRes.json();
 
-      const settings = (await settingsRes.json()) as GmailSkillSettings;
-      this.gmailSettings.set(settings);
-      await this.loadGmailStatus();
-    } catch {
-      this.gmailSettings.set(null);
-    }
-  }
+      const settingsPromises = skills.map(async (skill: any) => {
+        try {
+          const res = await fetch(`/api/skills/${skill.id}/settings`);
+          if (res.ok) {
+            const settings = await res.json();
+            return {
+              ...settings,
+              id: skill.id,
+              values: {},
+              connected: false,
+              loading: false
+            } as SkillSettings;
+          }
+        } catch { /* ignore skills without settings */ }
+        return null;
+      });
 
-  async loadGmailStatus(): Promise<void> {
-    const endpoint = this.gmailSettings()?.auth?.statusEndpoint;
-    if (!endpoint) return;
+      const allSettings = (await Promise.all(settingsPromises)).filter(s => s !== null) as SkillSettings[];
+      this.skillSettings.set(allSettings);
 
-    try {
-      const res = await fetch(endpoint);
-      if (!res.ok) return;
-      const data = await res.json();
-      this.gmailConnected.set(Boolean(data.connected));
-      this.gmailEmail.set(data.email || '');
-    } catch {
-      this.gmailConnected.set(false);
-      this.gmailEmail.set('');
-    }
-  }
-
-  async connectGmail(): Promise<void> {
-    const endpoint = this.gmailSettings()?.auth?.connectButton?.endpoint;
-    if (!endpoint) return;
-
-    this.gmailLoading.set(true);
-    try {
-      const res = await fetch(endpoint);
-      if (!res.ok) return;
-      const data = await res.json();
-      if (data.auth_url) {
-        window.location.href = data.auth_url;
+      // Load status for each
+      for (const s of allSettings) {
+        this.loadSkillStatus(s);
       }
     } finally {
-      this.gmailLoading.set(false);
+      this.globalLoading.set(false);
     }
   }
 
-  async revokeGmail(): Promise<void> {
-    const endpoint = this.gmailSettings()?.auth?.revokeButton?.endpoint;
+  async loadSkillStatus(skill: SkillSettings): Promise<void> {
+    const endpoint = skill.auth?.statusEndpoint;
     if (!endpoint) return;
 
-    this.gmailLoading.set(true);
+    try {
+      const res = await fetch(endpoint);
+      if (!res.ok) return;
+      const data = await res.json();
+
+      this.skillSettings.update(skills => skills.map(s => {
+        if (s.id === skill.id) {
+          return { ...s, connected: Boolean(data.connected), statusInfo: data };
+        }
+        return s;
+      }));
+    } catch {
+      this.skillSettings.update(skills => skills.map(s => {
+        if (s.id === skill.id) return { ...s, connected: false };
+        return s;
+      }));
+    }
+  }
+
+  async handleAuthAction(skill: SkillSettings): Promise<void> {
+    if (skill.auth?.type === 'oauth2') {
+      const endpoint = skill.auth.connectButton?.endpoint;
+      if (!endpoint) return;
+
+      this.setSkillLoading(skill, true);
+      try {
+        const res = await fetch(endpoint);
+        const data = await res.json();
+        if (data.auth_url) window.location.href = data.auth_url;
+      } finally {
+        this.setSkillLoading(skill, false);
+      }
+    } else if (skill.auth?.type === 'api_key') {
+      this.saveSkillConfig(skill);
+    }
+  }
+
+  async saveSkillConfig(skill: SkillSettings): Promise<void> {
+    const endpoint = skill.auth?.saveEndpoint;
+    if (!endpoint) return;
+
+    this.setSkillLoading(skill, true);
+    try {
+      const res = await fetch(endpoint, {
+        method: skill.auth?.saveMethod || 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(skill.values)
+      });
+      if (res.ok) {
+        this.saved.set(true);
+        setTimeout(() => this.saved.set(false), 2000);
+        this.loadSkillStatus(skill);
+      }
+    } finally {
+      this.setSkillLoading(skill, false);
+    }
+  }
+
+  async revokeAccess(skill: SkillSettings): Promise<void> {
+    const endpoint = skill.auth?.revokeButton?.endpoint;
+    if (!endpoint) return;
+
+    this.setSkillLoading(skill, true);
     try {
       await fetch(endpoint, { method: 'POST' });
-      this.gmailConnected.set(false);
-      this.gmailEmail.set('');
+      this.loadSkillStatus(skill);
     } finally {
-      this.gmailLoading.set(false);
+      this.setSkillLoading(skill, false);
     }
+  }
+
+  private setSkillLoading(skill: SkillSettings, loading: boolean) {
+    this.skillSettings.update(skills => skills.map(s => {
+      if (s.id === skill.id) return { ...s, loading };
+      return s;
+    }));
+  }
+
+  onFieldChange(skillId: string, key: string, event: any) {
+    const value = event.target.value;
+    this.skillSettings.update(skills => skills.map(s => {
+      if (s.id === skillId) {
+        return { ...s, values: { ...s.values, [key]: value } };
+      }
+      return s;
+    }));
+  }
+
+  checkCondition(field: SkillSettingsField, skill: SkillSettings): boolean {
+    if (!field.condition) return true;
+
+    // Simple parser for "key === 'value'" or "key !== 'value'" or composite "A && B"
+    try {
+      if (field.condition.includes('&&')) {
+        return field.condition.split('&&').every(c => this.checkCondition({ ...field, condition: c.trim() }, skill));
+      }
+
+      const match = field.condition.match(/(\w+)\s+(===|!==)\s+'([^']+)'/);
+      if (match) {
+        const [_, key, op, val] = match;
+        const actualValue = skill.values[key] || skill.statusInfo?.[key];
+        if (op === '===') return actualValue === val;
+        if (op === '!==') return actualValue !== val;
+      }
+    } catch (e) {
+      console.error('Error parsing condition:', field.condition, e);
+    }
+    return true;
+  }
+
+  async triggerAction(field: SkillSettingsField, skill: SkillSettings) {
+    if (!field.action_endpoint) return;
+
+    try {
+      skill.loading = true;
+      await fetch(field.action_endpoint, { method: 'POST' });
+      skill.linkStatus = 'starting';
+      this.pollStatus(field, skill);
+    } finally {
+      skill.loading = false;
+    }
+  }
+
+  private pollStatus(field: SkillSettingsField, skill: SkillSettings) {
+    if (!field.status_endpoint || !field.qr_endpoint) return;
+
+    const poll = async () => {
+      try {
+        const res = await fetch(field.status_endpoint!);
+        const data = await res.json();
+
+        skill.linkStatus = data.status;
+
+        if (data.is_connected) {
+          skill.qrImage = undefined;
+          this.loadSkillStatus(skill);
+          return;
+        }
+
+        if (data.status === 'qr_ready') {
+          const qrRes = await fetch(field.qr_endpoint!);
+          const qrData = await qrRes.json();
+          skill.qrImage = qrData.qr;
+        }
+
+        // Continue polling if not connected and we are still viewing this provider
+        const currentProvider = skill.values['provider_type'] || skill.statusInfo?.['provider_type'];
+        if (!data.is_connected && currentProvider === 'wa_web') {
+          setTimeout(poll, 3000);
+        }
+      } catch (e) {
+        console.error("Polling error", e);
+      }
+    };
+
+    poll();
   }
 
   toggleApiKeyVisibility(): void {

@@ -59,8 +59,8 @@ interface ChatResponse {
       <div class="chat-main">
         <!-- Chat header -->
         <div class="chat-header">
-          <button class="btn-ghost mobile-toggle" (click)="toggleConversations()">
-            <span class="material-symbols-rounded">menu</span>
+          <button class="btn-ghost conv-toggle" (click)="toggleConversations()">
+            <span class="material-symbols-rounded">{{ showConversations() ? 'arrow_back' : 'history' }}</span>
           </button>
           <div class="chat-header-info">
             <h2>Chat Playground</h2>
@@ -69,9 +69,9 @@ interface ChatResponse {
               {{ loading() ? 'Thinking...' : 'Ready' }}
             </span>
           </div>
-          <button class="btn btn-secondary" (click)="newConversation()" style="margin-left: auto;">
+          <button class="btn btn-secondary new-chat-btn" (click)="newConversation()" style="margin-left: auto;">
             <span class="material-symbols-rounded" style="font-size: 18px;">add</span>
-            New Chat
+            <span class="new-chat-text">New Chat</span>
           </button>
         </div>
 
@@ -303,7 +303,7 @@ interface ChatResponse {
       box-shadow: 0 0 6px rgba(52, 211, 153, 0.4);
     }
 
-    .mobile-toggle { display: none; }
+    .conv-toggle { display: none; }
 
     /* ---- Messages ---- */
     .chat-messages {
@@ -537,16 +537,79 @@ interface ChatResponse {
 
     @media (max-width: 768px) {
       .conv-sidebar {
-        position: absolute;
-        left: -280px;
+        position: fixed;
+        left: 0;
         top: 0;
         bottom: 0;
         z-index: 200;
-        transition: left var(--transition-base);
+        transition: transform var(--transition-base);
+        transform: translateX(-100%);
+        box-shadow: var(--shadow-lg);
+        width: 280px;
       }
 
-      .conv-sidebar.open { left: 0; }
-      .mobile-toggle { display: flex; }
+      .conv-sidebar.open {
+        transform: translateX(0);
+      }
+
+      .conv-toggle { display: flex; }
+
+      .chat-header {
+        padding: 10px 12px;
+      }
+
+      .chat-messages {
+        padding: 16px 12px;
+      }
+
+      .chat-input-area {
+        padding: 12px;
+      }
+
+      .message {
+        max-width: 100%;
+      }
+
+      .chat-welcome {
+        padding: 20px 12px;
+      }
+
+      .chat-welcome h2 {
+        font-size: 1.2rem;
+      }
+
+      .suggestions {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .suggestion-chip {
+        text-align: left;
+      }
+
+      .new-chat-text {
+        display: none;
+      }
+
+      .new-chat-btn {
+        padding: 8px 10px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .msg-content {
+        padding: 10px 12px;
+        font-size: 0.85rem;
+      }
+
+      .msg-avatar {
+        width: 28px;
+        height: 28px;
+      }
+
+      .msg-avatar .material-symbols-rounded {
+        font-size: 16px;
+      }
     }
   `]
 })

@@ -36,25 +36,98 @@
 
 
 
-    @if (gmailSettings()) {
+    @for (skill of skillSettings(); track skill.id) {
     <div class="card settings-section">
       <h2 class="section-title">
-        <span class="material-symbols-rounded">mail</span>
-        {{ gmailSettings()!.title }} Skill
+        <span class="material-symbols-rounded">
+          {{ skill.provider === 'gmail' ? 'mail' : 'extension' }}
+        </span>
+        {{ skill.title }} Skill
       </h2>
-      <p class="form-hint" style="margin-bottom: 12px;">{{ gmailSettings()!.description }}</p>
+      <p class="form-hint" style="margin-bottom: 12px;">{{ skill.description }}</p>
 
-      @if (gmailConnected()) {
-      <div class="gmail-status connected">
-        Connected as <strong>{{ gmailEmail() }}</strong>
+      @if (skill.setup_guide) {
+      <div class="setup-guide">
+        <span class="material-symbols-rounded" style="font-size: 16px;">help_outline</span>
+        <div class="guide-content" [innerHTML]="skill.setup_guide"></div>
       </div>
-      <button class="btn btn-danger" [disabled]="gmailLoading()" (click)="revokeGmail()">
-        {{ gmailSettings()!.auth?.revokeButton?.label || 'Revoke Gmail Access' }}
+      }
+
+      @if (skill.auth?.type === 'api_key' && skill.auth?.fields) {
+      <div class="skill-fields">
+        @for (field of skill.auth!.fields; track field.key) {
+        @if (checkCondition(field, skill)) {
+        <div class="form-group">
+          <label>{{ field.label }}</label>
+
+          @if (field.type === 'select') {
+          <select class="input" (change)="onFieldChange(skill.id, field.key, $event)">
+            <option value="" disabled [selected]="!(skill.values[field.key] || skill.statusInfo?.[field.key])">
+              Select an option...</option>
+            @for (opt of field.options; track opt.value) {
+            <option [value]="opt.value"
+              [selected]="(skill.values[field.key] || skill.statusInfo?.[field.key]) === opt.value">
+              {{ opt.label }}
+            </option>
+            }
+          </select>
+          } @else if (field.type === 'action_qr') {
+          <div class="qr-linking-zone" style="margin-top: 10px;">
+            @if (!skill.connected && !skill.qrImage) {
+            <button class="btn btn-primary" (click)="triggerAction(field, skill)" [disabled]="skill.loading">
+              {{ field.action_label || 'Start Linking' }}
+            </button>
+            }
+
+            @if (skill.linkStatus === 'qr_ready' && skill.qrImage) {
+            <div class="qr-container"
+              style="text-align: center; padding: 15px; background: white; border-radius: 8px; margin: 10px 0;">
+              <p style="color: #333; margin-bottom: 10px; font-size: 0.8rem; font-weight: 500;">
+                Scan with WhatsApp (Linked Devices):
+              </p>
+              <img [src]="skill.qrImage" alt="WhatsApp QR"
+                style="max-width: 220px; display: block; margin: 0 auto; border: 1px solid #eee;" />
+            </div>
+            }
+
+            @if (skill.connected) {
+            <div class="status-box connected" style="margin-top: 10px;">
+              <span class="material-symbols-rounded">check_circle</span>
+              Linked as Personal Account
+            </div>
+            }
+          </div>
+          } @else {
+          <input class="input" [type]="field.secret ? 'password' : 'text'" [placeholder]="field.placeholder || ''"
+            (input)="onFieldChange(skill.id, field.key, $event)"
+            [value]="skill.values[field.key] || skill.statusInfo?.[field.key] || ''" />
+          }
+
+          @if (field.hint) {
+          <small class="form-hint">{{ field.hint }}</small>
+          }
+        </div>
+        }
+        }
+      </div>
+      }
+
+      @if (skill.connected) {
+      <div class="status-box connected">
+        <span class="material-symbols-rounded">check_circle</span>
+        @if (skill.provider === 'gmail') {
+        Connected as <strong>{{ skill.statusInfo?.email }}</strong>
+        } @else {
+        Configured and Ready
+        }
+      </div>
+      <button class="btn btn-danger" [disabled]="skill.loading" (click)="revokeAccess(skill)">
+        {{ skill.auth?.revokeButton?.label || 'Revoke Access' }}
       </button>
       } @else {
-      <div class="gmail-status">Not connected</div>
-      <button class="btn btn-primary" [disabled]="gmailLoading()" (click)="connectGmail()">
-        {{ gmailSettings()!.auth?.connectButton?.label || 'Connect Gmail' }}
+      <div class="status-box">Not configured</div>
+      <button class="btn btn-primary" [disabled]="skill.loading" (click)="handleAuthAction(skill)">
+        {{ skill.auth?.connectButton?.label || (skill.auth?.type === 'api_key' ? 'Save Configuration' : 'Connect') }}
       </button>
       }
     </div>

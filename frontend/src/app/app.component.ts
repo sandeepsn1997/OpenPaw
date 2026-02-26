@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, HostListener } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
 
@@ -13,7 +13,10 @@ interface NavItem {
   standalone: true,
   imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
   template: `
-    <div class="app-shell" [class.sidebar-collapsed]="sidebarCollapsed()">
+    <div class="app-shell" [class.sidebar-collapsed]="sidebarCollapsed()" [class.mobile-open]="mobileMenuOpen()">
+      <!-- Mobile overlay -->
+      <div class="mobile-overlay" (click)="closeMobileMenu()"></div>
+
       <!-- Sidebar -->
       <aside class="sidebar">
         <!-- Logo -->
@@ -22,10 +25,13 @@ interface NavItem {
             <span class="material-symbols-rounded">pets</span>
           </div>
           <span class="logo-text">OpenPaw</span>
-          <button class="collapse-btn" (click)="toggleSidebar()">
+          <button class="collapse-btn desktop-only" (click)="toggleSidebar()">
             <span class="material-symbols-rounded">
               {{ sidebarCollapsed() ? 'chevron_right' : 'chevron_left' }}
             </span>
+          </button>
+          <button class="collapse-btn mobile-only" (click)="closeMobileMenu()">
+            <span class="material-symbols-rounded">close</span>
           </button>
         </div>
 
@@ -35,7 +41,8 @@ interface NavItem {
             <a class="nav-item"
                [routerLink]="item.route"
                routerLinkActive="active"
-               [title]="item.label">
+               [title]="item.label"
+               (click)="onNavClick()">
               <span class="material-symbols-rounded nav-icon">{{ item.icon }}</span>
               <span class="nav-label">{{ item.label }}</span>
             </a>
@@ -53,7 +60,22 @@ interface NavItem {
 
       <!-- Main content -->
       <main class="main-content">
-        <router-outlet></router-outlet>
+        <!-- Mobile top bar -->
+        <div class="mobile-topbar">
+          <button class="mobile-hamburger" (click)="openMobileMenu()">
+            <span class="material-symbols-rounded">menu</span>
+          </button>
+          <div class="mobile-logo">
+            <div class="logo-icon small">
+              <span class="material-symbols-rounded">pets</span>
+            </div>
+            <span class="logo-text">OpenPaw</span>
+          </div>
+          <div class="mobile-spacer"></div>
+        </div>
+        <div class="main-content-inner">
+          <router-outlet></router-outlet>
+        </div>
       </main>
     </div>
   `,
@@ -61,20 +83,35 @@ interface NavItem {
     .app-shell {
       display: flex;
       height: 100vh;
+      height: 100dvh;
       overflow: hidden;
+    }
+
+    /* ---- Mobile overlay ---- */
+    .mobile-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 150;
+      opacity: 0;
+      transition: opacity var(--transition-base);
+      pointer-events: none;
     }
 
     /* ---- Sidebar ---- */
     .sidebar {
       width: var(--sidebar-width);
       height: 100vh;
+      height: 100dvh;
       background: var(--bg-secondary);
       border-right: 1px solid var(--border-primary);
       display: flex;
       flex-direction: column;
-      transition: width var(--transition-base);
+      transition: width var(--transition-base), transform var(--transition-base);
       position: relative;
-      z-index: 100;
+      z-index: 200;
       flex-shrink: 0;
     }
 
@@ -101,6 +138,15 @@ interface NavItem {
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
+    }
+
+    .logo-icon.small {
+      width: 32px;
+      height: 32px;
+    }
+
+    .logo-icon.small .material-symbols-rounded {
+      font-size: 18px;
     }
 
     .logo-icon .material-symbols-rounded {
@@ -148,6 +194,9 @@ interface NavItem {
     .sidebar-collapsed .collapse-btn {
       margin-left: 0;
     }
+
+    .mobile-only { display: none; }
+    .desktop-only { display: flex; }
 
     /* Navigation */
     .sidebar-nav {
@@ -226,11 +275,105 @@ interface NavItem {
       flex: 1;
       overflow: hidden;
       background: var(--bg-primary);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .main-content-inner {
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ---- Mobile top bar ---- */
+    .mobile-topbar {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-primary);
+      min-height: 56px;
+    }
+
+    .mobile-hamburger {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 6px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      transition: all var(--transition-fast);
+    }
+
+    .mobile-hamburger:hover {
+      background: var(--bg-surface);
+      color: var(--text-primary);
+    }
+
+    .mobile-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .mobile-logo .logo-text {
+      font-size: 1.05rem;
+    }
+
+    .mobile-spacer {
+      flex: 1;
+    }
+
+    /* ---- Responsive ---- */
+    @media (max-width: 768px) {
+      .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        transform: translateX(-100%);
+        width: 280px !important;
+        box-shadow: var(--shadow-lg);
+      }
+
+      .mobile-open .sidebar {
+        transform: translateX(0);
+      }
+
+      .mobile-open .mobile-overlay {
+        display: block;
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .mobile-overlay {
+        display: block;
+      }
+
+      .mobile-topbar {
+        display: flex;
+      }
+
+      .desktop-only { display: none; }
+      .mobile-only { display: flex; }
+
+      .sidebar-collapsed .sidebar {
+        width: 280px;
+      }
+
+      .sidebar-collapsed .logo-text,
+      .sidebar-collapsed .nav-label,
+      .sidebar-collapsed .sidebar-version .nav-label {
+        display: inline;
+      }
     }
   `]
 })
 export class AppComponent {
   sidebarCollapsed = signal(false);
+  mobileMenuOpen = signal(false);
 
   navItems: NavItem[] = [
     { icon: 'dashboard', label: 'Dashboard', route: '/dashboard' },
@@ -243,5 +386,20 @@ export class AppComponent {
 
   toggleSidebar(): void {
     this.sidebarCollapsed.update(v => !v);
+  }
+
+  openMobileMenu(): void {
+    this.mobileMenuOpen.set(true);
+  }
+
+  closeMobileMenu(): void {
+    this.mobileMenuOpen.set(false);
+  }
+
+  onNavClick(): void {
+    // Close mobile menu when navigating
+    if (window.innerWidth <= 768) {
+      this.mobileMenuOpen.set(false);
+    }
   }
 }
