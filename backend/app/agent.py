@@ -64,11 +64,12 @@ class SimpleAgent:
                     content = response_message.get("content", "")
                 return content or "", ", ".join(tool_used_names) if tool_used_names else "groq"
 
-            messages.append({"role": "assistant", "content": "", "tool_calls": tool_calls})
+            serialized_tool_calls = self._serialize_tool_calls(tool_calls)
+            messages.append({"role": "assistant", "content": "", "tool_calls": serialized_tool_calls})
 
             for tool_call in tool_calls:
-                function_name = tool_call.function.name
-                function_args = json.loads(tool_call.function.arguments)
+                function_name = self._tool_call_function_name(tool_call)
+                function_args = json.loads(self._tool_call_function_arguments(tool_call))
 
                 print(f"Agent calling tool: {function_name} with {function_args}")
 
@@ -81,7 +82,7 @@ class SimpleAgent:
                         tool_result = "To access your emails, please authorize Gmail access through the Settings page. Click Settings > Email > Connect, then return to try again."
                         tool_used_names.append(function_name)
                         messages.append({
-                            "tool_call_id": tool_call.id,
+                            "tool_call_id": self._tool_call_id(tool_call),
                             "role": "tool",
                             "name": function_name,
                             "content": tool_result,
@@ -91,7 +92,7 @@ class SimpleAgent:
                 tool_result = await skill_manager.execute_skill(function_name, function_args)
                 tool_used_names.append(function_name)
                 messages.append({
-                    "tool_call_id": tool_call.id,
+                    "tool_call_id": self._tool_call_id(tool_call),
                     "role": "tool",
                     "name": function_name,
                     "content": tool_result,
@@ -149,3 +150,35 @@ class SimpleAgent:
                 raise
 
         return response_message, tool_calls
+
+    def _tool_call_id(self, tool_call):
+        if isinstance(tool_call, dict):
+            return tool_call.get("id", "")
+        return getattr(tool_call, "id", "")
+
+    def _tool_call_function_name(self, tool_call):
+        if isinstance(tool_call, dict):
+            return tool_call.get("function", {}).get("name", "")
+        function_obj = getattr(tool_call, "function", None)
+        return getattr(function_obj, "name", "")
+
+    def _tool_call_function_arguments(self, tool_call):
+        if isinstance(tool_call, dict):
+            return tool_call.get("function", {}).get("arguments", "{}")
+        function_obj = getattr(tool_call, "function", None)
+        return getattr(function_obj, "arguments", "{}")
+
+    def _serialize_tool_calls(self, tool_calls):
+        serialized = []
+        for tool_call in tool_calls or []:
+            serialized.append(
+                {
+                    "id": self._tool_call_id(tool_call),
+                    "type": "function",
+                    "function": {
+                        "name": self._tool_call_function_name(tool_call),
+                        "arguments": self._tool_call_function_arguments(tool_call),
+                    },
+                }
+            )
+        return serialized
