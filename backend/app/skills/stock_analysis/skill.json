@@ -1,42 +1,44 @@
 {
   "name": "stock_analysis",
-  "description": "Analyze equities and ETFs using technical, fundamental, and news-driven signals.",
-  "version": "1.0.0",
+  "description": "Generate swing-trade oriented stock analysis reports, including Indian market default picks when tickers are not provided.",
+  "version": "1.1.0",
   "input_schema": {
     "type": "object",
     "properties": {
       "tickers": {
         "type": "array",
-        "description": "Ticker symbols to analyze, e.g. AAPL, MSFT, NVDA.",
+        "description": "Optional ticker symbols. If omitted for market=india, the tool analyzes a curated liquid universe.",
         "items": {
           "type": "string"
         }
       },
       "analysis_window": {
         "type": "string",
-        "enum": [
-          "1d",
-          "1w",
-          "1m",
-          "3m",
-          "6m",
-          "ytd",
-          "1y"
-        ],
-        "default": "1m"
+        "enum": ["1w", "1m", "3m", "6m", "1y"],
+        "default": "3m"
       },
       "risk_profile": {
         "type": "string",
-        "enum": [
-          "conservative",
-          "balanced",
-          "aggressive"
-        ],
+        "enum": ["conservative", "balanced", "aggressive"],
         "default": "balanced"
+      },
+      "market": {
+        "type": "string",
+        "enum": ["india", "global"],
+        "default": "india"
+      },
+      "objective": {
+        "type": "string",
+        "enum": ["swing_trade", "position_trade"],
+        "default": "swing_trade"
+      },
+      "top_n": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 10,
+        "default": 5
       }
     },
-    "required": [
-      "tickers"
-    ]
+    "required": []
   }
 }

@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "task_scheduler_input",
+  "type": "object",
+  "properties": {
+    "action": {
+      "type": "string",
+      "enum": ["create", "update", "delete", "list"]
+    },
+    "title": {"type": "string"},
+    "description": {"type": "string"},
+    "task_type": {
+      "type": "string",
+      "enum": ["one_time", "daily", "monthly"],
+      "default": "one_time"
+    },
+    "scheduled_time": {"type": "string"},
+    "scheduled_date": {"type": "string"},
+    "recurrence": {
+      "type": "string",
+      "enum": ["one_time", "daily", "monthly"],
+      "default": "one_time"
+    },
+    "task_id": {"type": "string"},
+    "status": {
+      "type": "string",
+      "enum": ["pending", "in_progress", "completed", "failed"]
+    },
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 50,
+      "default": 20
+    }
+  },
+  "required": ["action"],
+  "additionalProperties": false
+}

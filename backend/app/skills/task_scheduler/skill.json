@@ -1,0 +1,54 @@
+{
+  "name": "task_scheduler",
+  "description": "Create and manage scheduled multi-step workflow tasks for later execution.",
+  "version": "1.0.0",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "action": {
+        "type": "string",
+        "enum": ["create", "update", "delete", "list"]
+      },
+      "title": {
+        "type": "string",
+        "description": "Task title"
+      },
+      "description": {
+        "type": "string",
+        "description": "Detailed workflow instructions and payload"
+      },
+      "task_type": {
+        "type": "string",
+        "enum": ["one_time", "daily", "monthly"],
+        "default": "one_time"
+      },
+      "scheduled_time": {
+        "type": "string",
+        "description": "HH:MM"
+      },
+      "scheduled_date": {
+        "type": "string",
+        "description": "YYYY-MM-DD for one_time, day of month for monthly"
+      },
+      "recurrence": {
+        "type": "string",
+        "enum": ["one_time", "daily", "monthly"],
+        "default": "one_time"
+      },
+      "task_id": {
+        "type": "string"
+      },
+      "status": {
+        "type": "string",
+        "enum": ["pending", "in_progress", "completed", "failed"]
+      },
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 50,
+        "default": 20
+      }
+    },
+    "required": ["action"]
+  }
+}
