@@ -5,59 +5,39 @@
   "properties": {
     "tickers": {
       "type": "array",
-      "description": "Ticker symbols to analyze, e.g. AAPL, MSFT, NVDA.",
+      "description": "Optional ticker list. For Indian swing trade requests, omit to use curated NSE large caps.",
       "items": {
         "type": "string",
-        "pattern": "^[A-Za-z.\\-]{1,10}$"
+        "pattern": "^[A-Za-z0-9.\-]{1,20}$"
       },
-      "minItems": 1,
-      "maxItems": 20
-    },
-    "benchmark": {
-      "type": "string",
-      "description": "Optional benchmark index ticker, e.g. SPY, QQQ.",
-      "default": "SPY"
+      "maxItems": 30
     },
     "analysis_window": {
       "type": "string",
-      "description": "Primary analysis horizon.",
-      "enum": ["1d", "1w", "1m", "3m", "6m", "ytd", "1y", "3y", "5y"],
-      "default": "1m"
-    },
-    "include_fundamentals": {
-      "type": "boolean",
-      "description": "Include valuation and earnings quality metrics.",
-      "default": true
-    },
-    "include_technicals": {
-      "type": "boolean",
-      "description": "Include indicators such as RSI, MACD, moving averages.",
-      "default": true
-    },
-    "include_news_catalysts": {
-      "type": "boolean",
-      "description": "Include recent market-moving news and events.",
-      "default": true
+      "enum": ["1w", "1m", "3m", "6m", "1y"],
+      "default": "3m"
     },
     "risk_profile": {
       "type": "string",
-      "description": "Tailor commentary to user risk appetite.",
       "enum": ["conservative", "balanced", "aggressive"],
       "default": "balanced"
     },
-    "comparison_mode": {
+    "market": {
       "type": "string",
-      "description": "Comparison objective for multiple tickers.",
-      "enum": ["performance", "valuation", "volatility", "momentum"],
-      "default": "performance"
+      "enum": ["india", "global"],
+      "default": "india"
     },
-    "output_format": {
+    "objective": {
       "type": "string",
-      "description": "Preferred output structure.",
-      "enum": ["summary", "detailed_report", "table"],
-      "default": "summary"
+      "enum": ["swing_trade", "position_trade"],
+      "default": "swing_trade"
+    },
+    "top_n": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10,
+      "default": 5
     }
   },
-  "required": ["tickers"],
   "additionalProperties": false
 }

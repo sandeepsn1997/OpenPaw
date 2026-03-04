@@ -53,29 +53,68 @@ class SimpleAgent:
         # Get available tools from SkillManager
         tools = skill_manager.get_tool_definitions()
         
-        # Initial LLM call with tools — handle Groq tool-call failures gracefully
+        tool_used_names = []
+        max_tool_rounds = 5
+        for _ in range(max_tool_rounds):
+            response_message, tool_calls = self._call_llm_with_tool_recovery(llm, messages, tools)
+
+            if not tool_calls:
+                content = getattr(response_message, "content", None)
+                if content is None and isinstance(response_message, dict):
+                    content = response_message.get("content", "")
+                return content or "", ", ".join(tool_used_names) if tool_used_names else "groq"
+
+            messages.append({"role": "assistant", "content": "", "tool_calls": tool_calls})
+
+            for tool_call in tool_calls:
+                function_name = tool_call.function.name
+                function_args = json.loads(tool_call.function.arguments)
+
+                print(f"Agent calling tool: {function_name} with {function_args}")
+
+                # Check if email skill is being called but Gmail is not connected
+                if function_name == "email":
+                    from .skills.email.backend import GmailService
+                    gmail_service = GmailService(db)
+                    gmail_status = gmail_service.status()
+                    if not gmail_status.get("connected"):
+                        tool_result = "To access your emails, please authorize Gmail access through the Settings page. Click Settings > Email > Connect, then return to try again."
+                        tool_used_names.append(function_name)
+                        messages.append({
+                            "tool_call_id": tool_call.id,
+                            "role": "tool",
+                            "name": function_name,
+                            "content": tool_result,
+                        })
+                        continue
+
+                tool_result = await skill_manager.execute_skill(function_name, function_args)
+                tool_used_names.append(function_name)
+                messages.append({
+                    "tool_call_id": tool_call.id,
+                    "role": "tool",
+                    "name": function_name,
+                    "content": tool_result,
+                })
+
+        final_reply = llm.chat(messages)
+        return final_reply, ", ".join(tool_used_names)
+
+    def _call_llm_with_tool_recovery(self, llm, messages, tools):
+        """Call tool-enabled LLM and recover tool calls from known Groq formatting failures."""
         response_message = None
         tool_calls = None
         try:
             response_message = llm.chat_with_tools(messages, tools)
             tool_calls = getattr(response_message, "tool_calls", None)
         except Exception as e:
-            # Groq can return a 400 with a failed_generation payload when it attempted to call a tool
-            # Try to extract a tool call from the exception text and continue locally.
             err = str(e)
-            
-
-            # Use regex to extract tool call from error message
             matches = re.findall(r"<function=([A-Za-z0-9_\-]+)=?((?:.|\n)*?)</function>", err)
-            
+
             for i, (fname, jstr) in enumerate(matches):
                 raw = jstr.strip()
-                
-                # Remove leading = if present
                 if raw.startswith("="):
                     raw = raw[1:].strip()
-
-                # Unescape quotes
                 raw = raw.replace('\"', '"').replace("\\'", "'")
 
                 args_obj = {}
@@ -95,71 +134,18 @@ class SimpleAgent:
                         except Exception:
                             pass
 
-                # Build a minimal tool_call-like object
                 tc = type("ToolCall", (), {})()
                 tc.id = f"failed-{i}"
                 fn = type("Function", (), {})()
                 fn.name = fname
                 fn.arguments = json.dumps(args_obj)
                 tc.function = fn
-                
+
                 if not tool_calls:
                     tool_calls = []
                 tool_calls.append(tc)
 
             if not tool_calls:
-                # Could not extract tool call, return generic message
-                return "I encountered an issue processing your request. Please try again.", None
+                raise
 
-        if not tool_calls:
-            # Handle non-tool responses correctly
-            content = getattr(response_message, "content", None)
-            if content is None and isinstance(response_message, dict):
-                content = response_message.get("content", "")
-            return content or "", "groq"
-
-        # If we reach here, tool_calls existed and were processed
-        # For LLM context, create a proper assistant message
-        assistant_message = {"role": "assistant", "content": "", "tool_calls": tool_calls}
-        messages.append(assistant_message)
-
-        tool_used_names = []
-        for tool_call in tool_calls:
-            function_name = tool_call.function.name
-            function_args = json.loads(tool_call.function.arguments)
-
-            print(f"Agent calling tool: {function_name} with {function_args}")
-
-            # Check if email skill is being called but Gmail is not connected
-            if function_name == "email":
-                from .skills.email.backend import GmailService
-                gmail_service = GmailService(db)
-                gmail_status = gmail_service.status()
-                if not gmail_status.get("connected"):
-                    # Return a friendly message telling user to connect email via settings
-                    tool_result = "To access your emails, please authorize Gmail access through the Settings page. Click Settings > Email > Connect, then return to try again."
-                    tool_used_names.append(function_name)
-                    # Add this result to messages and skip to next tool
-                    messages.append({
-                        "tool_call_id": tool_call.id,
-                        "role": "tool",
-                        "name": function_name,
-                        "content": tool_result,
-                    })
-                    continue
-
-            # Execute the skill
-            tool_result = await skill_manager.execute_skill(function_name, function_args)
-            tool_used_names.append(function_name)
-
-            # Add tool result to messages
-            messages.append({
-                "tool_call_id": tool_call.id,
-                "role": "tool",
-                "name": function_name,
-                "content": tool_result,
-            })
-
-        # Second LLM call to generate final response based on tool results
-        final_reply = llm.chat(messages)
-        return final_reply, ", ".join(tool_used_names)
+        return response_message, tool_calls
