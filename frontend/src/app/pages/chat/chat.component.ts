@@ -1,4 +1,4 @@
-import { Component, signal, effect, ViewChild, ElementRef, OnInit } from '@angular/core';
+import { Component, signal, effect, ViewChild, ElementRef, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -25,7 +25,7 @@ interface ChatResponse {
   template: `
     <div class="chat-page">
       <!-- Conversations sidebar -->
-      <div class="conv-sidebar" [class.open]="showConversations()">
+      <div class="conv-sidebar" [class.open]="showConversations()" [class.mobile]="isMobile()">
         <div class="conv-header">
           <h3>Conversations</h3>
           <button class="btn-ghost" (click)="newConversation()" title="New Chat">
@@ -55,12 +55,16 @@ interface ChatResponse {
         </div>
       </div>
 
+      @if (isMobile() && showConversations()) {
+        <button class="conv-backdrop" type="button" aria-label="Close conversations" (click)="showConversations.set(false)"></button>
+      }
+
       <!-- Main chat area -->
       <div class="chat-main">
         <!-- Chat header -->
         <div class="chat-header">
-          <button class="btn-ghost conv-toggle" (click)="toggleConversations()">
-            <span class="material-symbols-rounded">{{ showConversations() ? 'arrow_back' : 'history' }}</span>
+          <button class="btn-ghost conv-toggle" (click)="toggleConversations()" [attr.aria-label]="showConversations() ? 'Hide conversations' : 'Show conversations'">
+            <span class="material-symbols-rounded">{{ showConversations() ? 'left_panel_close' : 'left_panel_open' }}</span>
           </button>
           <div class="chat-header-info">
             <h2>Chat Playground</h2>
@@ -168,16 +172,29 @@ interface ChatResponse {
       display: flex;
       height: 100%;
       overflow: hidden;
+      width: 100%;
+      min-width: 0;
+      position: relative;
     }
 
     /* ---- Conversation Sidebar ---- */
     .conv-sidebar {
-      width: 280px;
+      width: min(320px, 30vw);
       background: var(--bg-secondary);
       border-right: 1px solid var(--border-primary);
       display: flex;
       flex-direction: column;
       flex-shrink: 0;
+      min-width: 0;
+      overflow: hidden;
+      transition: width var(--transition-base), opacity var(--transition-base), transform var(--transition-base);
+    }
+
+    .conv-sidebar:not(.open) {
+      width: 0;
+      border-right: none;
+      opacity: 0;
+      pointer-events: none;
     }
 
     .conv-header {
@@ -238,6 +255,7 @@ interface ChatResponse {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      max-width: 100%;
     }
 
     .conv-info small {
@@ -278,6 +296,16 @@ interface ChatResponse {
       background: var(--bg-secondary);
     }
 
+    .chat-header-info {
+      min-width: 0;
+    }
+
+    .chat-header-info h2 {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
     .chat-header-info h2 {
       font-size: 1rem;
       font-weight: 600;
@@ -303,7 +331,11 @@ interface ChatResponse {
       box-shadow: 0 0 6px rgba(52, 211, 153, 0.4);
     }
 
-    .conv-toggle { display: none; }
+    .conv-toggle { display: flex; }
+
+    .conv-backdrop {
+      display: none;
+    }
 
     /* ---- Messages ---- */
     .chat-messages {
@@ -313,6 +345,7 @@ interface ChatResponse {
       display: flex;
       flex-direction: column;
       gap: 20px;
+      min-width: 0;
     }
 
     .chat-welcome {
@@ -418,6 +451,7 @@ interface ChatResponse {
     .msg-body {
       display: flex;
       flex-direction: column;
+      min-width: 0;
     }
 
     .msg-header {
@@ -545,17 +579,33 @@ interface ChatResponse {
         transition: transform var(--transition-base);
         transform: translateX(-100%);
         box-shadow: var(--shadow-lg);
-        width: 280px;
+        width: min(320px, 86vw);
+        opacity: 1;
+        pointer-events: auto;
+        border-right: 1px solid var(--border-primary);
       }
 
       .conv-sidebar.open {
         transform: translateX(0);
       }
 
-      .conv-toggle { display: flex; }
+      .conv-sidebar:not(.open) {
+        width: min(320px, 86vw);
+      }
+
+      .conv-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 180;
+        border: none;
+        background: rgba(2, 6, 23, 0.58);
+        backdrop-filter: blur(1px);
+      }
 
       .chat-header {
         padding: 10px 12px;
+        gap: 8px;
       }
 
       .chat-messages {
@@ -594,6 +644,10 @@ interface ChatResponse {
       .new-chat-btn {
         padding: 8px 10px;
       }
+
+      .chat-status {
+        display: none;
+      }
     }
 
     @media (max-width: 480px) {
@@ -621,7 +675,9 @@ export class ChatComponent implements OnInit {
   loading = signal(false);
   error = signal<string | null>(null);
   conversationId = signal<string | null>(null);
-  showConversations = signal(true);
+  showConversations = signal(false);
+  isMobile = signal(false);
+  private lastMobileState: boolean | null = null;
   conversations = signal<{ id: string; preview: string; messageCount: number }[]>([]);
 
   constructor() {
@@ -632,7 +688,13 @@ export class ChatComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.syncResponsiveState();
     this.initChat();
+  }
+
+  @HostListener('window:resize')
+  onResize(): void {
+    this.syncResponsiveState();
   }
 
   async initChat(): Promise<void> {
@@ -694,6 +756,9 @@ export class ChatComponent implements OnInit {
       if (!res.ok) throw new Error('Failed to load conversation');
       const data = await res.json();
       this.messages.set(data.messages || []);
+      if (this.isMobile()) {
+        this.showConversations.set(false);
+      }
     } catch (err) {
       this.error.set(err instanceof Error ? err.message : 'Failed to load conversation');
     }
@@ -794,6 +859,15 @@ export class ChatComponent implements OnInit {
 
   toggleConversations(): void {
     this.showConversations.update(v => !v);
+  }
+
+  private syncResponsiveState(): void {
+    const mobile = window.innerWidth <= 768;
+    this.isMobile.set(mobile);
+    if (this.lastMobileState === null || this.lastMobileState !== mobile) {
+      this.showConversations.set(!mobile);
+      this.lastMobileState = mobile;
+    }
   }
 
   private scrollToBottom(): void {

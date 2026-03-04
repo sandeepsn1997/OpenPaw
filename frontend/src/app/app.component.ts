@@ -85,6 +85,9 @@ interface NavItem {
       height: 100vh;
       height: 100dvh;
       overflow: hidden;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
     }
 
     /* ---- Mobile overlay ---- */
@@ -277,11 +280,16 @@ interface NavItem {
       background: var(--bg-primary);
       display: flex;
       flex-direction: column;
+      min-width: 0;
+      width: 100%;
     }
 
     .main-content-inner {
       flex: 1;
       overflow: hidden;
+      overflow-x: hidden;
+      min-width: 0;
+      width: 100%;
     }
 
     /* ---- Mobile top bar ---- */
@@ -316,6 +324,7 @@ interface NavItem {
       display: flex;
       align-items: center;
       gap: 8px;
+      min-width: 0;
     }
 
     .mobile-logo .logo-text {
