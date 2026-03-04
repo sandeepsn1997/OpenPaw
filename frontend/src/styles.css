@@ -84,6 +84,9 @@ html {
   font-size: 14px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 body {
@@ -92,7 +95,10 @@ body {
   color: var(--text-primary);
   line-height: 1.6;
   overflow: hidden;
+  overflow-x: hidden;
   height: 100vh;
+  width: 100%;
+  max-width: 100%;
 }
 
 a {
@@ -132,7 +138,11 @@ a:hover {
   padding: 28px 32px;
   height: 100%;
   overflow-y: auto;
+  overflow-x: hidden;
   animation: fadeIn 0.35s ease-out;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .page-header {
@@ -159,6 +169,7 @@ a:hover {
   border-radius: var(--radius-lg);
   padding: 24px;
   transition: all var(--transition-base);
+  min-width: 0;
 }
 
 .card:hover {
